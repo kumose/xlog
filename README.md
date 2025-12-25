@@ -14,7 +14,7 @@ xlog
 [中文版](./README_CN.md)
 
 
-xlog Project Description
+xlog, a commandline log.
 
 ## 🛠️ Build
 
