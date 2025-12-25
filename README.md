@@ -16,6 +16,70 @@ xlog
 
 xlog, a commandline log.
 
+[demo.cc](examples/demo.cc)
+
+```c++
+#include <xlog/xlog.h>
+
+int main() {
+    using namespace xlog;
+
+    // Simple debug
+    xlogger.Debug("Starting the process");
+
+    xlogger.Info("Loading configuration");
+
+    xlogger.Warn("Configuration deprecated")
+           .WithField("file", "config.yaml")
+           ;
+
+    xlogger.IncreamIndent();
+    // Error with multi-line message
+    xlogger.Error(
+        "Failed to load module\nCheck the logs for details"
+    ).WithField("module", "network");
+
+    xlogger.Error(
+        "Failed"
+    ).WithField("message", "Failed to load module\nCheck the logs for details");
+
+    xlogger.Info(
+        "success!"
+    ).WithField("message", "Failed to load module\nCheck the logs for details")
+    .WithField("message1", "Failed to load module1\nCheck the logs for details1").WithField("module", "network");
+     xlogger.IncreamIndent();
+    xlogger.Fatal("Fatal error encountered");
+
+    // Using formatted message
+    int count = 5;
+    xlog::enable_log_level_string();
+    xlogger.Infof("Processed {} files successfully", count);
+
+    return 0;
+}
+```
+
+```bash
+⚙ Starting the process
+• Loading configuration
+⚠ Configuration deprecated      file=config.yaml
+⨯       Failed to load module
+⨯       Check the logs for details      module=network
+⨯       Failed
+        │  message=
+        │    Failed to load module=
+        │    Check the logs for details=
+•       success!        module=network
+        │  message=
+        │    Failed to load module=
+        │    Check the logs for details=
+        │  message1=
+        │    Failed to load module1=
+        │    Check the logs for details1=
+◼               Fatal error encountered
+• INFO          Processed 5 files successfully
+```
+
 ## 🛠️ Build
 
 This project uses [kmpkg](https://github.com/kumose/kmcmake) for dependency management and build integration.

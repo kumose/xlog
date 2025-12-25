@@ -38,7 +38,6 @@ endif ()
 
 find_package(Threads REQUIRED)
 find_package(fmt REQUIRED)
-find_package(ftxui REQUIRED)
 
 get_target_property(FMT_INCLUDE_DIR fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
 message(STATUS "fmt include = ${FMT_INCLUDE_DIR}")
@@ -54,9 +53,6 @@ include_directories(${FMT_INCLUDE_DIR})
 set(KMCMAKE_DEPS_LINK
         #${TURBO_LIB}
         fmt::fmt
-        ftxui::dom
-        ftxui::screen
-        ftxui::component
         ${KMCMAKE_SYSTEM_DYLINK}
         )
 list(REMOVE_DUPLICATES KMCMAKE_DEPS_LINK)

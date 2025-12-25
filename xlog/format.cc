@@ -15,40 +15,60 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //
 
-
 #include <xlog/format.h>
-#include <ftxui/screen/color.hpp>
-#include "ftxui/screen/screen.hpp"
 
-namespace xlog {
+namespace xlog
+{
 
-LevelFormater DefaultTheme() {
-    LevelFormater f;
+    ///
+    /// @brief Build default log theme with level-specific styles
+    /// Keep consistent with original FTXUI version: bold + fixed RGB colors for each log level
+    /// @return LevelFormater Configured formatter with default theme styles
+    ///
+    LevelFormater DefaultTheme()
+    {
+        LevelFormater f;
 
-    using namespace ftxui;
+        // ------------------------------
+        // DEBUG level style configuration
+        // Style: bold + foreground RGB(94, 101, 85)
+        // ------------------------------
+        f.debug.bold(true)
+            .foreground(94, 101, 85)
+            .build(); // Match original FTXUI Color::RGB(94, 101, 85)
 
-    f.debug = [](std::string msg) {
-        return make_xlog_style(msg, bold, Color::RGB(94, 101, 85));
-    };
+        // ------------------------------
+        // INFO level style configuration
+        // Style: bold + foreground RGB(4, 124, 140)
+        // ------------------------------
+        f.info.bold(true)
+            .foreground(4, 124, 140)
+            .build(); // Match original FTXUI Color::RGB(4, 124, 140)
 
-    f.info = [](std::string msg) {
-        return make_xlog_style(msg, bold, Color::RGB(4, 124, 140));
-    };
+        // ------------------------------
+        // WARN level style configuration
+        // Style: bold + foreground RGB(194, 156, 5)
+        // ------------------------------
+        f.warn.bold(true)
+            .foreground(194, 156, 5)
+            .build(); // Match original FTXUI Color::RGB(194, 156, 5)
 
-    f.warn = [](std::string msg) {
-        return make_xlog_style(msg, bold, Color::RGB(194, 156, 5));
-    };
+        // ------------------------------
+        // ERROR level style configuration
+        // Style: bold + foreground RGB(141, 35, 6)
+        // ------------------------------
+        f.error.bold(true)
+            .foreground(141, 35, 6)
+            .build(); // Match original FTXUI Color::RGB(141, 35, 6)
 
-    f.error = [](std::string msg) {
-        return make_xlog_style(msg, bold, Color::RGB(141, 35, 6));
-    };
+        // ------------------------------
+        // FATAL level style configuration
+        // Style: bold + foreground RGB(246, 60, 9)
+        // ------------------------------
+        f.fatal.bold(true)
+            .foreground(246, 60, 9)
+            .build(); // Match original FTXUI Color::RGB(246, 60, 9)
 
-    f.fatal = [](std::string msg) {
-        return make_xlog_style(msg, bold, Color::RGB(246, 60, 9));
-    };
-
-    return f;
-}
-
-    LevelFormater Formatter = DefaultTheme();
-}  // namespace xlog
+        return f;
+    }
+} // namespace xlog

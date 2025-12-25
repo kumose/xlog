@@ -20,6 +20,7 @@
 #include <iostream>
 #include <array>
 #include <vector>
+#include <xlog/format.h>
 
 namespace xlog {
 
@@ -98,10 +99,45 @@ namespace xlog {
         "◼",  // Fatal
     };
 
+    constexpr std::array<std::string_view, static_cast<int>(xlog::LogLevel::LevelCount)> DefaultLevelStrings = {
+        "DEBUG",  // Debug
+        "INFO",  // Info
+        "WARN",  // Warn
+        "ERROR",  // Error
+        "FATAL",  // Fatal
+    };
 
-inline int level_index(LogLevel l) {
-    return static_cast<int>(l);
-}
+    constexpr std::array<std::string_view, static_cast<int>(xlog::LogLevel::LevelCount)> ShortLevelStrings = {
+        "D",  // Debug
+        "I",  // Info
+        "W",  // Warn
+        "E",  // Error
+        "F",  // Fatal
+    };
+
+
+    struct LogConfig {
+        LogConfig();
+        LevelFormater Format;
+        FILE *File{nullptr};
+        bool  LogLevelString{false};
+        std::array<std::string_view, static_cast<int>(xlog::LogLevel::LevelCount)> Icons{DefaultStrings};
+        std::array<std::string_view, static_cast<int>(xlog::LogLevel::LevelCount)> LevelString{DefaultLevelStrings};
+    };
+
+
+    void set_log_config(LogConfig conf);
+
+    void enable_log_level_string();
+
+    void disable_log_level_string();
+
+    const LogConfig&get_log_config();
+    
+
+    inline int level_index(LogLevel l) {
+        return static_cast<int>(l);
+    }
 
 
 }  // namespace xlog

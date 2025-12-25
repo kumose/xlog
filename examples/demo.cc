@@ -17,7 +17,6 @@
 
 
 #include <xlog/xlog.h>
-#include <fmt/core.h>
 
 int main() {
     using namespace xlog;
@@ -41,8 +40,8 @@ int main() {
         "Failed"
     ).WithField("message", "Failed to load module\nCheck the logs for details");
 
-    xlogger.Error(
-        "Failed"
+    xlogger.Info(
+        "success!"
     ).WithField("message", "Failed to load module\nCheck the logs for details")
     .WithField("message1", "Failed to load module1\nCheck the logs for details1").WithField("module", "network");
      xlogger.IncreamIndent();
@@ -50,6 +49,7 @@ int main() {
 
     // Using formatted message
     int count = 5;
+    xlog::enable_log_level_string();
     xlogger.Infof("Processed {} files successfully", count);
 
     return 0;

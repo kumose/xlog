@@ -17,40 +17,124 @@
 
 #pragma once
 
-#include <xlog/logger.h>
 #include <functional>
-#include <ftxui/dom/elements.hpp>
-#include <ftxui/screen/screen.hpp>
+#include <fmt/format.h>
+#include <fmt/color.h>
+#include <fmt/core.h>
 #include <string_view>
 #include <vector>
 
+namespace xlog
+{
 
-namespace xlog {
+    struct FormatStyle
+    {
+        std::string LeftPadding{0};
+        std::string RightPadding{0};
+        std::string Value{};
+        std::vector<fmt::text_style> Elements;
+        fmt::text_style Style = fmt::text_style();
 
-    using StringFormater = std::function<std::string(std::string)>;
+        FormatStyle &left_padding(int n, char c = ' ')
+        {
+            LeftPadding = std::string(n, c);
+            return *this;
+        }
+        FormatStyle &right_padding(int n, char c = ' ')
+        {
+            RightPadding = std::string(n, c);
+            return *this;
+        }
+        FormatStyle &set_value(std::string_view msg)
+        {
+            Value = msg;
+            return *this;
+        }
+        FormatStyle &bold(bool b)
+        {
+            if (b)
+            {
+                Elements.push_back(fmt::emphasis::bold);
+            }
+            return *this;
+        }
 
-    struct LevelFormater {
-        StringFormater debug;
-        StringFormater info;
-        StringFormater warn;
-        StringFormater error;
-        StringFormater fatal;
+        FormatStyle &foreground(fmt::color col)
+        {
+            Elements.push_back(fmt::fg(col));
+            return *this;
+        }
+
+        FormatStyle &foreground(fmt::text_style d)
+        {
+            Elements.push_back(d);
+            return *this;
+        }
+
+        FormatStyle &foreground(int r, int g, int b)
+        {
+            Elements.push_back(fmt::fg(fmt::rgb(r,g,b)));
+            return *this;
+        }
+        FormatStyle &background(int r, int g, int b)
+        {
+            Elements.push_back(fmt::bg(fmt::rgb(r,g,b)));
+            return *this;
+        }
+
+        FormatStyle &background(fmt::text_style d)
+        {
+            Elements.push_back(d);
+            return *this;
+        }
+
+        FormatStyle &background(fmt::color col)
+        {
+            Elements.push_back(fmt::bg(col));
+            return *this;
+        }
+
+        void build()
+        {
+            for (auto &decorator : Elements)
+            {
+                Style |= decorator;
+            }
+        }
+
+        std::string render(const std::string &msg)
+        {
+            std::string content;
+            if (!Value.empty())
+            {
+                content = LeftPadding + Value + " " + msg + RightPadding;
+            }
+            else
+            {
+                content = LeftPadding + msg + RightPadding;
+            }
+
+            return fmt::format(Style, "{}", content);
+        }
+
+        static std::string repeat(int n);
     };
 
-    extern LevelFormater Formatter;
-        
+    struct LevelFormater
+    {
+        FormatStyle debug;
+        FormatStyle info;
+        FormatStyle warn;
+        FormatStyle error;
+        FormatStyle fatal;
+    };
+    LevelFormater DefaultTheme();
+
     inline std::string make_xlog_style(
-        const std::string& msg,
-        const ftxui::Decorator& deco,
-        const ftxui::Color& col) {
-
-        using namespace ftxui;
-
-        auto element = text(msg) | deco | ftxui::color(col);
-
-        auto screen = Screen::Create(Dimension::Fit(element));
-        Render(screen, element);
-        return screen.ToString();
+        const std::string &msg,
+        fmt::text_style deco,
+        fmt::color col)
+    {
+        return fmt::format(deco | fmt::fg(col), "{}", msg);
     }
-    
-}  // namespace xlog
+} // namespace xlog
