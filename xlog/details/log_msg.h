@@ -6,9 +6,9 @@
 #include <xlog/common.h>
 #include <string>
 
-namespace spdlog {
+namespace xlog {
 namespace details {
-struct SPDLOG_API log_msg {
+struct XLOG_API log_msg {
     log_msg() = default;
     log_msg(log_clock::time_point log_time,
             source_loc loc,
@@ -33,4 +33,4 @@ struct SPDLOG_API log_msg {
     string_view_t payload;
 };
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog

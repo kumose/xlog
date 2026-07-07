@@ -2,11 +2,11 @@
 // Copyright (c) 2012 - 2016, Victor Zverovich
 // All rights reserved.
 
-#ifndef SPDLOG_COMPILED_LIB
-#error Please define SPDLOG_COMPILED_LIB to compile this file.
+#ifndef XLOG_COMPILED_LIB
+#error Please define XLOG_COMPILED_LIB to compile this file.
 #endif
 
-#if !defined(SPDLOG_FMT_EXTERNAL) && !defined(SPDLOG_USE_STD_FORMAT)
+#if !defined(XLOG_FMT_EXTERNAL) && !defined(XLOG_USE_STD_FORMAT)
 
 #include <xlog/fmt/bundled/format-inl.h>
 
@@ -45,4 +45,4 @@ template FMT_API void buffer<wchar_t>::append(const wchar_t*, const wchar_t*);
 }  // namespace detail
 FMT_END_NAMESPACE
 
-#endif  // !SPDLOG_FMT_EXTERNAL
+#endif  // !XLOG_FMT_EXTERNAL

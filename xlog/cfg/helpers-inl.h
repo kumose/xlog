@@ -13,7 +13,7 @@
 #include <string>
 #include <utility>
 
-namespace spdlog {
+namespace xlog {
 namespace cfg {
 namespace helpers {
 
@@ -68,7 +68,7 @@ inline std::unordered_map<std::string, std::string> extract_key_vals_(const std:
     return rv;
 }
 
-SPDLOG_INLINE void load_levels(const std::string &input) {
+XLOG_INLINE void load_levels(const std::string &input) {
     if (input.empty() || input.size() >= 32768) {
         return;
     }
@@ -101,4 +101,4 @@ SPDLOG_INLINE void load_levels(const std::string &input) {
 
 }  // namespace helpers
 }  // namespace cfg
-}  // namespace spdlog
+}  // namespace xlog

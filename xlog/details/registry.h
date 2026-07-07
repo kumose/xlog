@@ -18,13 +18,13 @@
 #include <string>
 #include <unordered_map>
 
-namespace spdlog {
+namespace xlog {
 class logger;
 
 namespace details {
 class thread_pool;
 
-class SPDLOG_API registry {
+class XLOG_API registry {
 public:
     using log_levels = std::unordered_map<std::string, level::level_enum>;
     registry(const registry &) = delete;
@@ -37,9 +37,9 @@ public:
     std::shared_ptr<logger> default_logger();
 
     // Return raw ptr to the default logger.
-    // To be used directly by the spdlog default api (e.g. spdlog::info)
+    // To be used directly by the spdlog default api (e.g. xlog::info)
     // This make the default API faster, but cannot be used concurrently with set_default_logger().
-    // e.g do not call set_default_logger() from one thread while calling spdlog::info() from
+    // e.g do not call set_default_logger() from one thread while calling xlog::info() from
     // another.
     logger *get_default_raw();
 
@@ -113,7 +113,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<logger>> loggers_;
     log_levels log_levels_;
     std::unique_ptr<formatter> formatter_;
-    spdlog::level::level_enum global_log_level_ = level::info;
+    xlog::level::level_enum global_log_level_ = level::info;
     level::level_enum flush_level_ = level::off;
     err_handler err_handler_;
     std::shared_ptr<thread_pool> tp_;
@@ -124,5 +124,5 @@ private:
 };
 
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog
 

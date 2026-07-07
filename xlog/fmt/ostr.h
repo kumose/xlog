@@ -9,8 +9,8 @@
 //
 #include <xlog/tweakme.h>
 
-#if !defined(SPDLOG_USE_STD_FORMAT)
-#if !defined(SPDLOG_FMT_EXTERNAL)
+#if !defined(XLOG_USE_STD_FORMAT)
+#if !defined(XLOG_FMT_EXTERNAL)
 #endif
 #include <xlog/fmt/bundled/ostream.h>
 #else

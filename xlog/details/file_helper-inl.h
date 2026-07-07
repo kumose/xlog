@@ -12,20 +12,20 @@
 #include <string>
 #include <tuple>
 
-namespace spdlog {
+namespace xlog {
 namespace details {
 
-SPDLOG_INLINE file_helper::file_helper(const file_event_handlers &event_handlers)
+XLOG_INLINE file_helper::file_helper(const file_event_handlers &event_handlers)
     : event_handlers_(event_handlers) {}
 
-SPDLOG_INLINE file_helper::~file_helper() { close(); }
+XLOG_INLINE file_helper::~file_helper() { close(); }
 
-SPDLOG_INLINE void file_helper::open(const filename_t &fname, bool truncate) {
+XLOG_INLINE void file_helper::open(const filename_t &fname, bool truncate) {
     close();
     filename_ = fname;
 
-    auto *mode = SPDLOG_FILENAME_T("ab");
-    auto *trunc_mode = SPDLOG_FILENAME_T("wb");
+    auto *mode = XLOG_FILENAME_T("ab");
+    auto *trunc_mode = XLOG_FILENAME_T("wb");
 
     if (event_handlers_.before_open) {
         event_handlers_.before_open(filename_);
@@ -58,26 +58,26 @@ SPDLOG_INLINE void file_helper::open(const filename_t &fname, bool truncate) {
                     errno);
 }
 
-SPDLOG_INLINE void file_helper::reopen(bool truncate) {
+XLOG_INLINE void file_helper::reopen(bool truncate) {
     if (filename_.empty()) {
         throw_spdlog_ex("Failed re opening file - was not opened before");
     }
     this->open(filename_, truncate);
 }
 
-SPDLOG_INLINE void file_helper::flush() {
+XLOG_INLINE void file_helper::flush() {
     if (std::fflush(fd_) != 0) {
         throw_spdlog_ex("Failed flush to file " + os::filename_to_str(filename_), errno);
     }
 }
 
-SPDLOG_INLINE void file_helper::sync() {
+XLOG_INLINE void file_helper::sync() {
     if (!os::fsync(fd_)) {
         throw_spdlog_ex("Failed to fsync file " + os::filename_to_str(filename_), errno);
     }
 }
 
-SPDLOG_INLINE void file_helper::close() {
+XLOG_INLINE void file_helper::close() {
     if (fd_ != nullptr) {
         if (event_handlers_.before_close) {
             event_handlers_.before_close(filename_, fd_);
@@ -92,7 +92,7 @@ SPDLOG_INLINE void file_helper::close() {
     }
 }
 
-SPDLOG_INLINE void file_helper::write(const memory_buf_t &buf) {
+XLOG_INLINE void file_helper::write(const memory_buf_t &buf) {
     if (fd_ == nullptr) return;
     size_t msg_size = buf.size();
     auto data = buf.data();
@@ -102,14 +102,14 @@ SPDLOG_INLINE void file_helper::write(const memory_buf_t &buf) {
     }
 }
 
-SPDLOG_INLINE size_t file_helper::size() const {
+XLOG_INLINE size_t file_helper::size() const {
     if (fd_ == nullptr) {
         throw_spdlog_ex("Cannot use size() on closed file " + os::filename_to_str(filename_));
     }
     return os::filesize(fd_);
 }
 
-SPDLOG_INLINE const filename_t &file_helper::filename() const { return filename_; }
+XLOG_INLINE const filename_t &file_helper::filename() const { return filename_; }
 
 //
 // return file path and its extension:
@@ -124,7 +124,7 @@ SPDLOG_INLINE const filename_t &file_helper::filename() const { return filename_
 // ".mylog" => (".mylog". "")
 // "my_folder/.mylog" => ("my_folder/.mylog", "")
 // "my_folder/.mylog.txt" => ("my_folder/.mylog", ".txt")
-SPDLOG_INLINE std::tuple<filename_t, filename_t> file_helper::split_by_extension(
+XLOG_INLINE std::tuple<filename_t, filename_t> file_helper::split_by_extension(
     const filename_t &fname) {
     auto ext_index = fname.rfind('.');
 
@@ -145,4 +145,4 @@ SPDLOG_INLINE std::tuple<filename_t, filename_t> file_helper::split_by_extension
 }
 
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog

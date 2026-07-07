@@ -5,11 +5,11 @@
 
 #include <xlog/details/periodic_worker.h>
 
-namespace spdlog {
+namespace xlog {
 namespace details {
 
 // stop the worker thread and join it
-SPDLOG_INLINE periodic_worker::~periodic_worker() {
+XLOG_INLINE periodic_worker::~periodic_worker() {
     if (worker_thread_.joinable()) {
         {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -21,4 +21,4 @@ SPDLOG_INLINE periodic_worker::~periodic_worker() {
 }
 
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog

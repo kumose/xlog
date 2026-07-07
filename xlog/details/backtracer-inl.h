@@ -5,52 +5,52 @@
 
 #include <xlog/details/backtracer.h>
 
-namespace spdlog {
+namespace xlog {
 namespace details {
-SPDLOG_INLINE backtracer::backtracer(const backtracer &other) {
+XLOG_INLINE backtracer::backtracer(const backtracer &other) {
     std::lock_guard<std::mutex> lock(other.mutex_);
     enabled_ = other.enabled();
     messages_ = other.messages_;
 }
 
-SPDLOG_INLINE backtracer::backtracer(backtracer &&other) SPDLOG_NOEXCEPT {
+XLOG_INLINE backtracer::backtracer(backtracer &&other) XLOG_NOEXCEPT {
     std::lock_guard<std::mutex> lock(other.mutex_);
     enabled_ = other.enabled();
     messages_ = std::move(other.messages_);
 }
 
-SPDLOG_INLINE backtracer &backtracer::operator=(backtracer other) {
+XLOG_INLINE backtracer &backtracer::operator=(backtracer other) {
     std::lock_guard<std::mutex> lock(mutex_);
     enabled_ = other.enabled();
     messages_ = std::move(other.messages_);
     return *this;
 }
 
-SPDLOG_INLINE void backtracer::enable(size_t size) {
+XLOG_INLINE void backtracer::enable(size_t size) {
     std::lock_guard<std::mutex> lock{mutex_};
     enabled_.store(true, std::memory_order_relaxed);
     messages_ = circular_q<log_msg_buffer>{size};
 }
 
-SPDLOG_INLINE void backtracer::disable() {
+XLOG_INLINE void backtracer::disable() {
     std::lock_guard<std::mutex> lock{mutex_};
     enabled_.store(false, std::memory_order_relaxed);
 }
 
-SPDLOG_INLINE bool backtracer::enabled() const { return enabled_.load(std::memory_order_relaxed); }
+XLOG_INLINE bool backtracer::enabled() const { return enabled_.load(std::memory_order_relaxed); }
 
-SPDLOG_INLINE void backtracer::push_back(const log_msg &msg) {
+XLOG_INLINE void backtracer::push_back(const log_msg &msg) {
     std::lock_guard<std::mutex> lock{mutex_};
     messages_.push_back(log_msg_buffer{msg});
 }
 
-SPDLOG_INLINE bool backtracer::empty() const {
+XLOG_INLINE bool backtracer::empty() const {
     std::lock_guard<std::mutex> lock{mutex_};
     return messages_.empty();
 }
 
 // pop all items in the q and apply the given fun on each of them.
-SPDLOG_INLINE void backtracer::foreach_pop(std::function<void(const details::log_msg &)> fun) {
+XLOG_INLINE void backtracer::foreach_pop(std::function<void(const details::log_msg &)> fun) {
     std::lock_guard<std::mutex> lock{mutex_};
     while (!messages_.empty()) {
         auto &front_msg = messages_.front();
@@ -59,4 +59,4 @@ SPDLOG_INLINE void backtracer::foreach_pop(std::function<void(const details::log
     }
 }
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog

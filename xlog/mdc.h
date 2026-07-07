@@ -3,8 +3,8 @@
 
 #pragma once
 
-#if defined(SPDLOG_NO_TLS)
-#error "This header requires thread local storage support, but SPDLOG_NO_TLS is defined."
+#if defined(XLOG_NO_TLS)
+#error "This header requires thread local storage support, but XLOG_NO_TLS is defined."
 #endif
 
 #include <map>
@@ -17,12 +17,12 @@
 // thread pool have different copy).
 //
 // Usage example:
-// spdlog::mdc::put("mdc_key_1", "mdc_value_1");
-// spdlog::info("Hello, {}", "World!");  // => [2024-04-26 02:08:05.040] [info]
+// xlog::mdc::put("mdc_key_1", "mdc_value_1");
+// xlog::info("Hello, {}", "World!");  // => [2024-04-26 02:08:05.040] [info]
 // [mdc_key_1:mdc_value_1] Hello, World!
 
-namespace spdlog {
-class SPDLOG_API mdc {
+namespace xlog {
+class XLOG_API mdc {
 public:
     using mdc_map_t = std::map<std::string, std::string>;
 
@@ -49,4 +49,4 @@ public:
     }
 };
 
-}  // namespace spdlog
+}  // namespace xlog

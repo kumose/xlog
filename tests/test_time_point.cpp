@@ -3,25 +3,25 @@
 #include <xlog/async.h>
 
 TEST_CASE("time_point1", "[time_point log_msg]") {
-    std::shared_ptr<spdlog::sinks::test_sink_st> test_sink(new spdlog::sinks::test_sink_st);
-    spdlog::logger logger("test-time_point", test_sink);
+    std::shared_ptr<xlog::sinks::test_sink_st> test_sink(new xlog::sinks::test_sink_st);
+    xlog::logger logger("test-time_point", test_sink);
 
-    spdlog::source_loc source{};
+    xlog::source_loc source{};
     std::chrono::system_clock::time_point tp{std::chrono::system_clock::now()};
     test_sink->set_pattern("%T.%F");  // interested in the time_point
 
     // all the following should have the same time
     test_sink->set_delay(std::chrono::milliseconds(10));
     for (int i = 0; i < 5; i++) {
-        spdlog::details::log_msg msg{tp, source, "test_logger", spdlog::level::info, "message"};
+        xlog::details::log_msg msg{tp, source, "test_logger", xlog::level::info, "message"};
         test_sink->log(msg);
     }
 
-    logger.log(tp, source, spdlog::level::info, "formatted message");
-    logger.log(tp, source, spdlog::level::info, "formatted message");
-    logger.log(tp, source, spdlog::level::info, "formatted message");
-    logger.log(tp, source, spdlog::level::info, "formatted message");
-    logger.log(source, spdlog::level::info,
+    logger.log(tp, source, xlog::level::info, "formatted message");
+    logger.log(tp, source, xlog::level::info, "formatted message");
+    logger.log(tp, source, xlog::level::info, "formatted message");
+    logger.log(tp, source, xlog::level::info, "formatted message");
+    logger.log(source, xlog::level::info,
                "formatted message");  // last line has different time_point
 
     // now the real test... that the times are the same.
@@ -31,5 +31,5 @@ TEST_CASE("time_point1", "[time_point log_msg]") {
     REQUIRE(lines[4] == lines[5]);
     REQUIRE(lines[6] == lines[7]);
     REQUIRE(lines[8] != lines[9]);
-    spdlog::drop_all();
+    xlog::drop_all();
 }

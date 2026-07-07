@@ -21,7 +21,7 @@
 
 #include <string>
 
-namespace spdlog {
+namespace xlog {
 namespace details {
 class tcp_client {
     int socket_ = -1;
@@ -200,4 +200,4 @@ public:
     }
 };
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog

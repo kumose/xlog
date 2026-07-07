@@ -13,12 +13,12 @@
 #include <thread>
 #include <vector>
 
-namespace spdlog {
+namespace xlog {
 class async_logger;
 
 namespace details {
 
-using async_logger_ptr = std::shared_ptr<spdlog::async_logger>;
+using async_logger_ptr = std::shared_ptr<xlog::async_logger>;
 
 enum class async_msg_type { log, flush, terminate };
 
@@ -67,7 +67,7 @@ struct async_msg : log_msg_buffer {
         : async_msg{nullptr, the_type} {}
 };
 
-class SPDLOG_API thread_pool {
+class XLOG_API thread_pool {
 public:
     using item_type = async_msg;
     using q_type = details::mpmc_blocking_queue<item_type>;
@@ -110,4 +110,4 @@ private:
 };
 
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog

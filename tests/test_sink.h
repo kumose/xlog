@@ -6,13 +6,14 @@
 #pragma once
 
 #include <xlog/details/null_mutex.h>
+#include <xlog/details/os.h>
 #include <xlog/sinks/base_sink.h>
 #include <xlog/fmt/fmt.h>
 #include <chrono>
 #include <mutex>
 #include <thread>
 
-namespace spdlog {
+namespace xlog {
 namespace sinks {
 
 template <class Mutex>
@@ -67,4 +68,4 @@ using test_sink_mt = test_sink<std::mutex>;
 using test_sink_st = test_sink<details::null_mutex>;
 
 }  // namespace sinks
-}  // namespace spdlog
+}  // namespace xlog

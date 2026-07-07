@@ -16,7 +16,7 @@
 #include <string>
 #include <type_traits>
 
-#ifdef SPDLOG_USE_STD_FORMAT
+#ifdef XLOG_USE_STD_FORMAT
 #include <version>
 #if __cpp_lib_format >= 202207L
 #include <format>
@@ -25,121 +25,121 @@
 #endif
 #endif
 
-#ifdef SPDLOG_COMPILED_LIB
-#if defined(SPDLOG_SHARED_LIB)
+#ifdef XLOG_COMPILED_LIB
+#if defined(XLOG_SHARED_LIB)
 #if defined(_WIN32)
 #ifdef spdlog_EXPORTS
-#define SPDLOG_API __declspec(dllexport)
+#define XLOG_API __declspec(dllexport)
 #else  // !spdlog_EXPORTS
-#define SPDLOG_API __declspec(dllimport)
+#define XLOG_API __declspec(dllimport)
 #endif
 #else  // !defined(_WIN32)
-#define SPDLOG_API __attribute__((visibility("default")))
+#define XLOG_API __attribute__((visibility("default")))
 #endif
-#else  // !defined(SPDLOG_SHARED_LIB)
-#define SPDLOG_API
+#else  // !defined(XLOG_SHARED_LIB)
+#define XLOG_API
 #endif
-#define SPDLOG_INLINE
-#else  // !defined(SPDLOG_COMPILED_LIB)
-#define SPDLOG_API
-#define SPDLOG_INLINE inline
-#endif  // #ifdef SPDLOG_COMPILED_LIB
+#define XLOG_INLINE
+#else  // !defined(XLOG_COMPILED_LIB)
+#define XLOG_API
+#define XLOG_INLINE inline
+#endif  // #ifdef XLOG_COMPILED_LIB
 
 #include <xlog/fmt/fmt.h>
 
-#if !defined(SPDLOG_USE_STD_FORMAT) && \
+#if !defined(XLOG_USE_STD_FORMAT) && \
 FMT_VERSION >= 80000  // backward compatibility with fmt versions older than 8
-#define SPDLOG_FMT_RUNTIME(format_string) fmt::runtime(format_string)
-#define SPDLOG_FMT_STRING(format_string) FMT_STRING(format_string)
-#if defined(SPDLOG_WCHAR_FILENAMES) || defined(SPDLOG_WCHAR_TO_UTF8_SUPPORT)
+#define XLOG_FMT_RUNTIME(format_string) fmt::runtime(format_string)
+#define XLOG_FMT_STRING(format_string) FMT_STRING(format_string)
+#if defined(XLOG_WCHAR_FILENAMES) || defined(XLOG_WCHAR_TO_UTF8_SUPPORT)
 #include <xlog/fmt/xchar.h>
 #endif
 #else
-#define SPDLOG_FMT_RUNTIME(format_string) format_string
-#define SPDLOG_FMT_STRING(format_string) format_string
+#define XLOG_FMT_RUNTIME(format_string) format_string
+#define XLOG_FMT_STRING(format_string) format_string
 #endif
 
 // visual studio up to 2013 does not support noexcept nor constexpr
 #if defined(_MSC_VER) && (_MSC_VER < 1900)
-#define SPDLOG_NOEXCEPT _NOEXCEPT
-#define SPDLOG_CONSTEXPR
+#define XLOG_NOEXCEPT _NOEXCEPT
+#define XLOG_CONSTEXPR
 #else
-#define SPDLOG_NOEXCEPT noexcept
-#define SPDLOG_CONSTEXPR constexpr
+#define XLOG_NOEXCEPT noexcept
+#define XLOG_CONSTEXPR constexpr
 #endif
 
 // If building with std::format, can just use constexpr, otherwise if building with fmt
-// SPDLOG_CONSTEXPR_FUNC needs to be set the same as FMT_CONSTEXPR to avoid situations where
+// XLOG_CONSTEXPR_FUNC needs to be set the same as FMT_CONSTEXPR to avoid situations where
 // a constexpr function in spdlog could end up calling a non-constexpr function in fmt
 // depending on the compiler
 // If fmt determines it can't use constexpr, we should inline the function instead
-#ifdef SPDLOG_USE_STD_FORMAT
-#define SPDLOG_CONSTEXPR_FUNC constexpr
+#ifdef XLOG_USE_STD_FORMAT
+#define XLOG_CONSTEXPR_FUNC constexpr
 #else  // Being built with fmt
 #if FMT_USE_CONSTEXPR
-#define SPDLOG_CONSTEXPR_FUNC FMT_CONSTEXPR
+#define XLOG_CONSTEXPR_FUNC FMT_CONSTEXPR
 #else
-#define SPDLOG_CONSTEXPR_FUNC inline
+#define XLOG_CONSTEXPR_FUNC inline
 #endif
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)
-#define SPDLOG_DEPRECATED __attribute__((deprecated))
+#define XLOG_DEPRECATED __attribute__((deprecated))
 #elif defined(_MSC_VER)
-#define SPDLOG_DEPRECATED __declspec(deprecated)
+#define XLOG_DEPRECATED __declspec(deprecated)
 #else
-#define SPDLOG_DEPRECATED
+#define XLOG_DEPRECATED
 #endif
 
 // disable thread local on msvc 2013
-#ifndef SPDLOG_NO_TLS
+#ifndef XLOG_NO_TLS
 #if (defined(_MSC_VER) && (_MSC_VER < 1900)) || defined(__cplusplus_winrt)
-#define SPDLOG_NO_TLS 1
+#define XLOG_NO_TLS 1
 #endif
 #endif
 
-#ifndef SPDLOG_FUNCTION
-#define SPDLOG_FUNCTION static_cast<const char *>(__FUNCTION__)
+#ifndef XLOG_FUNCTION
+#define XLOG_FUNCTION static_cast<const char *>(__FUNCTION__)
 #endif
 
-#ifdef SPDLOG_NO_EXCEPTIONS
-#define SPDLOG_TRY
-#define SPDLOG_THROW(ex)                               \
+#ifdef XLOG_NO_EXCEPTIONS
+#define XLOG_TRY
+#define XLOG_THROW(ex)                               \
     do {                                               \
         printf("spdlog fatal error: %s\n", ex.what()); \
         std::abort();                                  \
     } while (0)
-#define SPDLOG_CATCH_STD
+#define XLOG_CATCH_STD
 #else
-#define SPDLOG_TRY try
-#define SPDLOG_THROW(ex) throw(ex)
-#define SPDLOG_CATCH_STD             \
+#define XLOG_TRY try
+#define XLOG_THROW(ex) throw(ex)
+#define XLOG_CATCH_STD             \
     catch (const std::exception &) { \
     }
 #endif
 
-namespace spdlog {
+namespace xlog {
     class formatter;
 
     namespace sinks {
         class sink;
     }
 
-#if defined(_WIN32) && defined(SPDLOG_WCHAR_FILENAMES)
+#if defined(_WIN32) && defined(XLOG_WCHAR_FILENAMES)
     using filename_t = std::wstring;
-    // allow macro expansion to occur in SPDLOG_FILENAME_T
-#define SPDLOG_FILENAME_T_INNER(s) L##s
-#define SPDLOG_FILENAME_T(s) SPDLOG_FILENAME_T_INNER(s)
+    // allow macro expansion to occur in XLOG_FILENAME_T
+#define XLOG_FILENAME_T_INNER(s) L##s
+#define XLOG_FILENAME_T(s) XLOG_FILENAME_T_INNER(s)
 #else
     using filename_t = std::string;
-#define SPDLOG_FILENAME_T(s) s
+#define XLOG_FILENAME_T(s) s
 #endif
 
     using log_clock = std::chrono::system_clock;
     using sink_ptr = std::shared_ptr<sinks::sink>;
     using sinks_init_list = std::initializer_list<sink_ptr>;
     using err_handler = std::function<void(const std::string &err_msg)>;
-#ifdef SPDLOG_USE_STD_FORMAT
+#ifdef XLOG_USE_STD_FORMAT
     namespace fmt_lib = std;
 
     using string_view_t = std::string_view;
@@ -158,7 +158,7 @@ namespace spdlog {
             : std::integral_constant<bool, std::is_convertible<T, std::basic_string_view<Char> >::value> {
     };
 
-#if defined(SPDLOG_WCHAR_FILENAMES) || defined(SPDLOG_WCHAR_TO_UTF8_SUPPORT)
+#if defined(XLOG_WCHAR_FILENAMES) || defined(XLOG_WCHAR_TO_UTF8_SUPPORT)
     using wstring_view_t = std::wstring_view;
     using wmemory_buf_t = std::wstring;
 
@@ -170,7 +170,7 @@ namespace spdlog {
     using wformat_string_t = std::wstring_view;
 #endif
 #endif
-#define SPDLOG_BUF_TO_STRING(x) x
+#define XLOG_BUF_TO_STRING(x) x
 #else  // use fmt lib instead of std::format
     namespace fmt_lib = fmt;
 
@@ -200,21 +200,21 @@ namespace spdlog {
                 std::is_same<remove_cvref_t<T>, fmt_runtime_string<Char> >::value> {
     };
 
-#if defined(SPDLOG_WCHAR_FILENAMES) || defined(SPDLOG_WCHAR_TO_UTF8_SUPPORT)
+#if defined(XLOG_WCHAR_FILENAMES) || defined(XLOG_WCHAR_TO_UTF8_SUPPORT)
     using wstring_view_t = fmt::basic_string_view<wchar_t>;
     using wmemory_buf_t = fmt::basic_memory_buffer<wchar_t, 250>;
 
     template<typename... Args>
     using wformat_string_t = fmt::wformat_string<Args...>;
 #endif
-#define SPDLOG_BUF_TO_STRING(x) fmt::to_string(x)
+#define XLOG_BUF_TO_STRING(x) fmt::to_string(x)
 #endif
 
-#ifdef SPDLOG_WCHAR_TO_UTF8_SUPPORT
+#ifdef XLOG_WCHAR_TO_UTF8_SUPPORT
 #ifndef _WIN32
-#error SPDLOG_WCHAR_TO_UTF8_SUPPORT only supported on windows
+#error XLOG_WCHAR_TO_UTF8_SUPPORT only supported on windows
 #endif  // _WIN32
-#endif  // SPDLOG_WCHAR_TO_UTF8_SUPPORT
+#endif  // XLOG_WCHAR_TO_UTF8_SUPPORT
 
     template<class T>
     struct is_convertible_to_any_format_string
@@ -223,65 +223,65 @@ namespace spdlog {
                 is_convertible_to_basic_format_string<T, wchar_t>::value> {
     };
 
-#if defined(SPDLOG_NO_ATOMIC_LEVELS)
+#if defined(XLOG_NO_ATOMIC_LEVELS)
     using level_t = details::null_atomic_int;
 #else
     using level_t = std::atomic<int>;
 #endif
 
-#define SPDLOG_LEVEL_TRACE 0
-#define SPDLOG_LEVEL_DEBUG 1
-#define SPDLOG_LEVEL_INFO 2
-#define SPDLOG_LEVEL_WARN 3
-#define SPDLOG_LEVEL_ERROR 4
-#define SPDLOG_LEVEL_CRITICAL 5
-#define SPDLOG_LEVEL_OFF 6
+#define XLOG_LEVEL_TRACE 0
+#define XLOG_LEVEL_DEBUG 1
+#define XLOG_LEVEL_INFO 2
+#define XLOG_LEVEL_WARN 3
+#define XLOG_LEVEL_ERROR 4
+#define XLOG_LEVEL_CRITICAL 5
+#define XLOG_LEVEL_OFF 6
 
-#if !defined(SPDLOG_ACTIVE_LEVEL)
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_INFO
+#if !defined(XLOG_ACTIVE_LEVEL)
+#define XLOG_ACTIVE_LEVEL XLOG_LEVEL_INFO
 #endif
 
     // Log level enum
     namespace level {
         enum level_enum : int {
-            trace = SPDLOG_LEVEL_TRACE,
-            debug = SPDLOG_LEVEL_DEBUG,
-            info = SPDLOG_LEVEL_INFO,
-            warn = SPDLOG_LEVEL_WARN,
-            err = SPDLOG_LEVEL_ERROR,
-            critical = SPDLOG_LEVEL_CRITICAL,
-            off = SPDLOG_LEVEL_OFF,
+            trace = XLOG_LEVEL_TRACE,
+            debug = XLOG_LEVEL_DEBUG,
+            info = XLOG_LEVEL_INFO,
+            warn = XLOG_LEVEL_WARN,
+            err = XLOG_LEVEL_ERROR,
+            critical = XLOG_LEVEL_CRITICAL,
+            off = XLOG_LEVEL_OFF,
             n_levels
         };
 
-#define SPDLOG_LEVEL_NAME_TRACE spdlog::string_view_t("trace", 5)
-#define SPDLOG_LEVEL_NAME_DEBUG spdlog::string_view_t("debug", 5)
-#define SPDLOG_LEVEL_NAME_INFO spdlog::string_view_t("info", 4)
-#define SPDLOG_LEVEL_NAME_WARNING spdlog::string_view_t("warning", 7)
-#define SPDLOG_LEVEL_NAME_ERROR spdlog::string_view_t("error", 5)
-#define SPDLOG_LEVEL_NAME_CRITICAL spdlog::string_view_t("critical", 8)
-#define SPDLOG_LEVEL_NAME_OFF spdlog::string_view_t("off", 3)
+#define XLOG_LEVEL_NAME_TRACE xlog::string_view_t("trace", 5)
+#define XLOG_LEVEL_NAME_DEBUG xlog::string_view_t("debug", 5)
+#define XLOG_LEVEL_NAME_INFO xlog::string_view_t("info", 4)
+#define XLOG_LEVEL_NAME_WARNING xlog::string_view_t("warning", 7)
+#define XLOG_LEVEL_NAME_ERROR xlog::string_view_t("error", 5)
+#define XLOG_LEVEL_NAME_CRITICAL xlog::string_view_t("critical", 8)
+#define XLOG_LEVEL_NAME_OFF xlog::string_view_t("off", 3)
 
-#if !defined(SPDLOG_LEVEL_NAMES)
-#define SPDLOG_LEVEL_NAMES                                                                  \
+#if !defined(XLOG_LEVEL_NAMES)
+#define XLOG_LEVEL_NAMES                                                                  \
     {                                                                                       \
-        SPDLOG_LEVEL_NAME_TRACE, SPDLOG_LEVEL_NAME_DEBUG, SPDLOG_LEVEL_NAME_INFO,           \
-            SPDLOG_LEVEL_NAME_WARNING, SPDLOG_LEVEL_NAME_ERROR, SPDLOG_LEVEL_NAME_CRITICAL, \
-            SPDLOG_LEVEL_NAME_OFF                                                           \
+        XLOG_LEVEL_NAME_TRACE, XLOG_LEVEL_NAME_DEBUG, XLOG_LEVEL_NAME_INFO,           \
+            XLOG_LEVEL_NAME_WARNING, XLOG_LEVEL_NAME_ERROR, XLOG_LEVEL_NAME_CRITICAL, \
+            XLOG_LEVEL_NAME_OFF                                                           \
     }
 #endif
 
-#if !defined(SPDLOG_SHORT_LEVEL_NAMES)
+#if !defined(XLOG_SHORT_LEVEL_NAMES)
 
-#define SPDLOG_SHORT_LEVEL_NAMES \
+#define XLOG_SHORT_LEVEL_NAMES \
     { "T", "D", "I", "W", "E", "C", "O" }
 #endif
 
-        SPDLOG_API const string_view_t &to_string_view(spdlog::level::level_enum l) SPDLOG_NOEXCEPT;
+        XLOG_API const string_view_t &to_string_view(xlog::level::level_enum l) XLOG_NOEXCEPT;
 
-        SPDLOG_API const char *to_short_c_str(spdlog::level::level_enum l) SPDLOG_NOEXCEPT;
+        XLOG_API const char *to_short_c_str(xlog::level::level_enum l) XLOG_NOEXCEPT;
 
-        SPDLOG_API spdlog::level::level_enum from_str(const std::string &name) SPDLOG_NOEXCEPT;
+        XLOG_API xlog::level::level_enum from_str(const std::string &name) XLOG_NOEXCEPT;
     } // namespace level
 
     //
@@ -301,32 +301,32 @@ namespace spdlog {
     //
     // Log exception
     //
-    class SPDLOG_API spdlog_ex : public std::exception {
+    class XLOG_API spdlog_ex : public std::exception {
     public:
         explicit spdlog_ex(std::string msg);
 
         spdlog_ex(const std::string &msg, int last_errno);
 
-        const char *what() const SPDLOG_NOEXCEPT override;
+        const char *what() const XLOG_NOEXCEPT override;
 
     private:
         std::string msg_;
     };
 
-    [[noreturn]] SPDLOG_API void throw_spdlog_ex(const std::string &msg, int last_errno);
+    [[noreturn]] XLOG_API void throw_spdlog_ex(const std::string &msg, int last_errno);
 
-    [[noreturn]] SPDLOG_API void throw_spdlog_ex(std::string msg);
+    [[noreturn]] XLOG_API void throw_spdlog_ex(std::string msg);
 
     struct source_loc {
-        SPDLOG_CONSTEXPR source_loc() = default;
+        XLOG_CONSTEXPR source_loc() = default;
 
-        SPDLOG_CONSTEXPR source_loc(const char *filename_in, int line_in, const char *funcname_in)
+        XLOG_CONSTEXPR source_loc(const char *filename_in, int line_in, const char *funcname_in)
             : filename{filename_in},
               line{line_in},
               funcname{funcname_in} {
         }
 
-        SPDLOG_CONSTEXPR bool empty() const SPDLOG_NOEXCEPT { return line <= 0; }
+        XLOG_CONSTEXPR bool empty() const XLOG_NOEXCEPT { return line <= 0; }
         const char *filename{nullptr};
         int line{0};
         const char *funcname{nullptr};
@@ -349,32 +349,32 @@ namespace spdlog {
     namespace details {
         // to_string_view
 
-        SPDLOG_CONSTEXPR_FUNC spdlog::string_view_t to_string_view(const memory_buf_t &buf)
-            SPDLOG_NOEXCEPT {
-            return spdlog::string_view_t{buf.data(), buf.size()};
+        XLOG_CONSTEXPR_FUNC xlog::string_view_t to_string_view(const memory_buf_t &buf)
+            XLOG_NOEXCEPT {
+            return xlog::string_view_t{buf.data(), buf.size()};
         }
 
-        SPDLOG_CONSTEXPR_FUNC spdlog::string_view_t to_string_view(spdlog::string_view_t str)
-            SPDLOG_NOEXCEPT {
+        XLOG_CONSTEXPR_FUNC xlog::string_view_t to_string_view(xlog::string_view_t str)
+            XLOG_NOEXCEPT {
             return str;
         }
 
-#if defined(SPDLOG_WCHAR_FILENAMES) || defined(SPDLOG_WCHAR_TO_UTF8_SUPPORT)
-        SPDLOG_CONSTEXPR_FUNC spdlog::wstring_view_t to_string_view(const wmemory_buf_t &buf)
-            SPDLOG_NOEXCEPT {
-            return spdlog::wstring_view_t{buf.data(), buf.size()};
+#if defined(XLOG_WCHAR_FILENAMES) || defined(XLOG_WCHAR_TO_UTF8_SUPPORT)
+        XLOG_CONSTEXPR_FUNC xlog::wstring_view_t to_string_view(const wmemory_buf_t &buf)
+            XLOG_NOEXCEPT {
+            return xlog::wstring_view_t{buf.data(), buf.size()};
         }
 
-        SPDLOG_CONSTEXPR_FUNC spdlog::wstring_view_t to_string_view(spdlog::wstring_view_t str)
-            SPDLOG_NOEXCEPT {
+        XLOG_CONSTEXPR_FUNC xlog::wstring_view_t to_string_view(xlog::wstring_view_t str)
+            XLOG_NOEXCEPT {
             return str;
         }
 #endif
 
-#if defined(SPDLOG_USE_STD_FORMAT) && __cpp_lib_format >= 202207L
+#if defined(XLOG_USE_STD_FORMAT) && __cpp_lib_format >= 202207L
         template<typename T, typename... Args>
-        SPDLOG_CONSTEXPR_FUNC std::basic_string_view<T> to_string_view(
-            std::basic_format_string<T, Args...> fmt) SPDLOG_NOEXCEPT {
+        XLOG_CONSTEXPR_FUNC std::basic_string_view<T> to_string_view(
+            std::basic_format_string<T, Args...> fmt) XLOG_NOEXCEPT {
             return fmt.get();
         }
 #endif
@@ -393,4 +393,4 @@ namespace spdlog {
             return value;
         }
     } // namespace details
-} // namespace spdlog
+} // namespace xlog

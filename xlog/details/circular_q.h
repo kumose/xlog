@@ -9,7 +9,7 @@
 
 #include <xlog/common.h>
 
-namespace spdlog {
+namespace xlog {
 namespace details {
 template <typename T>
 class circular_q {
@@ -35,9 +35,9 @@ public:
 
     // move cannot be default,
     // since we need to reset head_, tail_, etc to zero in the moved object
-    circular_q(circular_q &&other) SPDLOG_NOEXCEPT { copy_moveable(std::move(other)); }
+    circular_q(circular_q &&other) XLOG_NOEXCEPT { copy_moveable(std::move(other)); }
 
-    circular_q &operator=(circular_q &&other) SPDLOG_NOEXCEPT {
+    circular_q &operator=(circular_q &&other) XLOG_NOEXCEPT {
         copy_moveable(std::move(other));
         return *this;
     }
@@ -98,7 +98,7 @@ public:
 
 private:
     // copy from other&& and reset it to disabled state
-    void copy_moveable(circular_q &&other) SPDLOG_NOEXCEPT {
+    void copy_moveable(circular_q &&other) XLOG_NOEXCEPT {
         max_items_ = other.max_items_;
         head_ = other.head_;
         tail_ = other.tail_;
@@ -112,4 +112,4 @@ private:
     }
 };
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog

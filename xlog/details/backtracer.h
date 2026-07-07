@@ -13,9 +13,9 @@
 // Store log messages in circular buffer.
 // Useful for storing debug data in case of error/warning happens.
 
-namespace spdlog {
+namespace xlog {
 namespace details {
-class SPDLOG_API backtracer {
+class XLOG_API backtracer {
     mutable std::mutex mutex_;
     std::atomic<bool> enabled_{false};
     circular_q<log_msg_buffer> messages_;
@@ -24,7 +24,7 @@ public:
     backtracer() = default;
     backtracer(const backtracer &other);
 
-    backtracer(backtracer &&other) SPDLOG_NOEXCEPT;
+    backtracer(backtracer &&other) XLOG_NOEXCEPT;
     backtracer &operator=(backtracer other);
 
     void enable(size_t size);
@@ -38,4 +38,4 @@ public:
 };
 
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog

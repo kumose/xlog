@@ -6,7 +6,7 @@
 #if defined(_WIN32)
 
 #include <xlog/details/null_mutex.h>
-#if defined(SPDLOG_WCHAR_TO_UTF8_SUPPORT)
+#if defined(XLOG_WCHAR_TO_UTF8_SUPPORT)
 #include <xlog/details/os.h>
 #endif
 #include <xlog/sinks/base_sink.h>
@@ -15,14 +15,14 @@
 #include <string>
 
 // Avoid including windows.h (https://stackoverflow.com/a/30741042)
-#if defined(SPDLOG_WCHAR_TO_UTF8_SUPPORT)
+#if defined(XLOG_WCHAR_TO_UTF8_SUPPORT)
 extern "C" __declspec(dllimport) void __stdcall OutputDebugStringW(const wchar_t *lpOutputString);
 #else
 extern "C" __declspec(dllimport) void __stdcall OutputDebugStringA(const char *lpOutputString);
 #endif
 extern "C" __declspec(dllimport) int __stdcall IsDebuggerPresent();
 
-namespace spdlog {
+namespace xlog {
 namespace sinks {
 /*
  * MSVC sink (logging using OutputDebugStringA)
@@ -42,7 +42,7 @@ protected:
         memory_buf_t formatted;
         base_sink<Mutex>::formatter_->format(msg, formatted);
         formatted.push_back('\0');  // add a null terminator for OutputDebugString
-#if defined(SPDLOG_WCHAR_TO_UTF8_SUPPORT)
+#if defined(XLOG_WCHAR_TO_UTF8_SUPPORT)
         wmemory_buf_t wformatted;
         details::os::utf8_to_wstrbuf(string_view_t(formatted.data(), formatted.size()), wformatted);
         OutputDebugStringW(wformatted.data());
@@ -63,6 +63,6 @@ using windebug_sink_mt = msvc_sink_mt;
 using windebug_sink_st = msvc_sink_st;
 
 }  // namespace sinks
-}  // namespace spdlog
+}  // namespace xlog
 
 #endif

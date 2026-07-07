@@ -7,7 +7,7 @@
 #include <utility>
 // null, no cost dummy "mutex" and dummy "atomic" int
 
-namespace spdlog {
+namespace xlog {
 namespace details {
 struct null_mutex {
     void lock() const {}
@@ -32,4 +32,4 @@ struct null_atomic_int {
 };
 
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog

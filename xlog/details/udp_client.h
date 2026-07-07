@@ -22,7 +22,7 @@
 
 #include <string>
 
-namespace spdlog {
+namespace xlog {
 namespace details {
 
 class udp_client {
@@ -78,4 +78,4 @@ public:
     }
 };
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog

@@ -31,12 +31,12 @@
 // Examples:
 //
 // std::vector<char> v(200, 0x0b);
-// logger->info("Some buffer {}", spdlog::to_hex(v));
+// logger->info("Some buffer {}", xlog::to_hex(v));
 // char buf[128];
-// logger->info("Some buffer {:X}", spdlog::to_hex(std::begin(buf), std::end(buf)));
-// logger->info("Some buffer {:X}", spdlog::to_hex(std::begin(buf), std::end(buf), 16));
+// logger->info("Some buffer {:X}", xlog::to_hex(std::begin(buf), std::end(buf)));
+// logger->info("Some buffer {:X}", xlog::to_hex(std::begin(buf), std::end(buf), 16));
 
-namespace spdlog {
+namespace xlog {
 namespace details {
 
 template <typename It>
@@ -90,10 +90,10 @@ inline details::dump_info<It> to_hex(const It range_begin,
     return details::dump_info<It>(range_begin, range_end, size_per_line);
 }
 
-}  // namespace spdlog
+}  // namespace xlog
 
 namespace
-#ifdef SPDLOG_USE_STD_FORMAT
+#ifdef XLOG_USE_STD_FORMAT
     std
 #else
     fmt
@@ -101,7 +101,7 @@ namespace
 {
 
 template <typename T>
-struct formatter<spdlog::details::dump_info<T>, char> {
+struct formatter<xlog::details::dump_info<T>, char> {
     char delimiter = ' ';
     bool put_newlines = true;
     bool put_delimiters = true;
@@ -111,7 +111,7 @@ struct formatter<spdlog::details::dump_info<T>, char> {
 
     // parse the format string flags
     template <typename ParseContext>
-    SPDLOG_CONSTEXPR_FUNC auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+    XLOG_CONSTEXPR_FUNC auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
         auto it = ctx.begin();
         while (it != ctx.end() && *it != '}') {
             switch (*it) {
@@ -142,13 +142,13 @@ struct formatter<spdlog::details::dump_info<T>, char> {
 
     // format the given bytes range as hex
     template <typename FormatContext, typename Container>
-    auto format(const spdlog::details::dump_info<Container> &the_range,
+    auto format(const xlog::details::dump_info<Container> &the_range,
                 FormatContext &ctx) const -> decltype(ctx.out()) {
-        SPDLOG_CONSTEXPR const char *hex_upper = "0123456789ABCDEF";
-        SPDLOG_CONSTEXPR const char *hex_lower = "0123456789abcdef";
+        XLOG_CONSTEXPR const char *hex_upper = "0123456789ABCDEF";
+        XLOG_CONSTEXPR const char *hex_lower = "0123456789abcdef";
         const char *hex_chars = use_uppercase ? hex_upper : hex_lower;
 
-#if !defined(SPDLOG_USE_STD_FORMAT) && FMT_VERSION < 60000
+#if !defined(XLOG_USE_STD_FORMAT) && FMT_VERSION < 60000
         auto inserter = ctx.begin();
 #else
         auto inserter = ctx.out();
@@ -217,7 +217,7 @@ struct formatter<spdlog::details::dump_info<T>, char> {
         *inserter++ = '\n';
 
         if (put_positions) {
-            spdlog::fmt_lib::format_to(inserter, SPDLOG_FMT_STRING("{:04X}: "), pos);
+            xlog::fmt_lib::format_to(inserter, XLOG_FMT_STRING("{:04X}: "), pos);
         }
     }
 };

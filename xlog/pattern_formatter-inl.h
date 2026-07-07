@@ -8,7 +8,7 @@
 #include <xlog/details/log_msg.h>
 #include <xlog/details/os.h>
 
-#ifndef SPDLOG_NO_TLS
+#ifndef XLOG_NO_TLS
 #include <xlog/mdc.h>
 #endif
 
@@ -29,7 +29,7 @@
 #include <utility>
 #include <vector>
 
-namespace spdlog {
+namespace xlog {
 namespace details {
 
 ///////////////////////////////////////////////////////////////////////
@@ -507,7 +507,7 @@ public:
 };
 
 // ISO 8601 offset from UTC in timezone (+-HH:MM)
-// If SPDLOG_NO_TZ_OFFSET is defined, print "+??.??" instead.
+// If XLOG_NO_TZ_OFFSET is defined, print "+??.??" instead.
 template <typename ScopedPadder>
 class z_formatter final : public flag_formatter {
 public:
@@ -522,7 +522,7 @@ public:
     void format(const details::log_msg &msg, const std::tm &tm_time, memory_buf_t &dest) override {
         const size_t field_size = 6;
         ScopedPadder p(field_size, padinfo_, dest);
-#ifdef SPDLOG_NO_TZ_OFFSET
+#ifdef XLOG_NO_TZ_OFFSET
         const char *str = "+??:??";
         dest.append(str, str + 6);
 #else
@@ -543,7 +543,7 @@ public:
         fmt_helper::pad2(total_minutes / 60, dest);  // hours
         dest.push_back(':');
         fmt_helper::pad2(total_minutes % 60, dest);  // minutes
-#endif  // SPDLOG_NO_TZ_OFFSET
+#endif  // XLOG_NO_TZ_OFFSET
     }
 
 private:
@@ -802,7 +802,7 @@ private:
 
 // Class for formatting Mapped Diagnostic Context (MDC) in log messages.
 // Example: [logger-name] [info] [mdc_key_1:mdc_value_1 mdc_key_2:mdc_value_2] some message
-#ifndef SPDLOG_NO_TLS
+#ifndef XLOG_NO_TLS
 template <typename ScopedPadder>
 class mdc_formatter : public flag_formatter {
 public:
@@ -919,7 +919,7 @@ public:
             dest.push_back(' ');
         }
 
-#ifndef SPDLOG_NO_TLS
+#ifndef XLOG_NO_TLS
         // add mdc if present
         auto &mdc_map = mdc::get_context();
         if (!mdc_map.empty()) {
@@ -937,14 +937,14 @@ private:
     std::chrono::seconds cache_timestamp_{0};
     memory_buf_t cached_datetime_;
 
-#ifndef SPDLOG_NO_TLS
+#ifndef XLOG_NO_TLS
     mdc_formatter<null_scoped_padder> mdc_formatter_{padding_info {}};
 #endif
 };
 
 }  // namespace details
 
-SPDLOG_INLINE pattern_formatter::pattern_formatter(std::string pattern,
+XLOG_INLINE pattern_formatter::pattern_formatter(std::string pattern,
                                                    pattern_time_type time_type,
                                                    std::string eol,
                                                    custom_flags custom_user_flags)
@@ -959,7 +959,7 @@ SPDLOG_INLINE pattern_formatter::pattern_formatter(std::string pattern,
 }
 
 // use by default full formatter for if pattern is not given
-SPDLOG_INLINE pattern_formatter::pattern_formatter(pattern_time_type time_type, std::string eol)
+XLOG_INLINE pattern_formatter::pattern_formatter(pattern_time_type time_type, std::string eol)
     : pattern_("%+"),
       eol_(std::move(eol)),
       pattern_time_type_(time_type),
@@ -969,7 +969,7 @@ SPDLOG_INLINE pattern_formatter::pattern_formatter(pattern_time_type time_type, 
     formatters_.push_back(details::make_unique<details::full_formatter>(details::padding_info{}));
 }
 
-SPDLOG_INLINE std::unique_ptr<formatter> pattern_formatter::clone() const {
+XLOG_INLINE std::unique_ptr<formatter> pattern_formatter::clone() const {
     custom_flags cloned_custom_formatters;
     for (auto &it : custom_handlers_) {
         cloned_custom_formatters[it.first] = it.second->clone();
@@ -984,7 +984,7 @@ SPDLOG_INLINE std::unique_ptr<formatter> pattern_formatter::clone() const {
 #endif
 }
 
-SPDLOG_INLINE void pattern_formatter::format(const details::log_msg &msg, memory_buf_t &dest) {
+XLOG_INLINE void pattern_formatter::format(const details::log_msg &msg, memory_buf_t &dest) {
     if (need_localtime_) {
         const auto secs =
             std::chrono::duration_cast<std::chrono::seconds>(msg.time.time_since_epoch());
@@ -1001,15 +1001,15 @@ SPDLOG_INLINE void pattern_formatter::format(const details::log_msg &msg, memory
     details::fmt_helper::append_string_view(eol_, dest);
 }
 
-SPDLOG_INLINE void pattern_formatter::set_pattern(std::string pattern) {
+XLOG_INLINE void pattern_formatter::set_pattern(std::string pattern) {
     pattern_ = std::move(pattern);
     need_localtime_ = false;
     compile_pattern_(pattern_);
 }
 
-SPDLOG_INLINE void pattern_formatter::need_localtime(bool need) { need_localtime_ = need; }
+XLOG_INLINE void pattern_formatter::need_localtime(bool need) { need_localtime_ = need; }
 
-SPDLOG_INLINE std::tm pattern_formatter::get_time_(const details::log_msg &msg) {
+XLOG_INLINE std::tm pattern_formatter::get_time_(const details::log_msg &msg) {
     if (pattern_time_type_ == pattern_time_type::local) {
         return details::os::localtime(log_clock::to_time_t(msg.time));
     }
@@ -1017,7 +1017,7 @@ SPDLOG_INLINE std::tm pattern_formatter::get_time_(const details::log_msg &msg) 
 }
 
 template <typename Padder>
-SPDLOG_INLINE void pattern_formatter::handle_flag_(char flag, details::padding_info padding) {
+XLOG_INLINE void pattern_formatter::handle_flag_(char flag, details::padding_info padding) {
     // process custom flags
     auto it = custom_handlers_.find(flag);
     if (it != custom_handlers_.end()) {
@@ -1233,7 +1233,7 @@ SPDLOG_INLINE void pattern_formatter::handle_flag_(char flag, details::padding_i
                     padding));
             break;
 
-#ifndef SPDLOG_NO_TLS  // mdc formatter requires TLS support
+#ifndef XLOG_NO_TLS  // mdc formatter requires TLS support
         case ('&'):
             formatters_.push_back(details::make_unique<details::mdc_formatter<Padder>>(padding));
             break;
@@ -1248,8 +1248,8 @@ SPDLOG_INLINE void pattern_formatter::handle_flag_(char flag, details::padding_i
                 formatters_.push_back((std::move(unknown_flag)));
             }
             // fix issue #1617 (prev char was '!' and should have been treated as funcname flag
-            // instead of truncating flag) spdlog::set_pattern("[%10!] %v") => "[      main] some
-            // message" spdlog::set_pattern("[%3!!] %v") => "[mai] some message"
+            // instead of truncating flag) xlog::set_pattern("[%10!] %v") => "[      main] some
+            // message" xlog::set_pattern("[%3!!] %v") => "[mai] some message"
             else {
                 padding.truncate_ = false;
                 formatters_.push_back(
@@ -1265,7 +1265,7 @@ SPDLOG_INLINE void pattern_formatter::handle_flag_(char flag, details::padding_i
 // Extract given pad spec (e.g. %8X, %=8X, %-8!X, %8!X, %=8!X, %-8!X, %+8!X)
 // Advance the given it pass the end of the padding spec found (if any)
 // Return padding.
-SPDLOG_INLINE details::padding_info pattern_formatter::handle_padspec_(
+XLOG_INLINE details::padding_info pattern_formatter::handle_padspec_(
     std::string::const_iterator &it, std::string::const_iterator end) {
     using details::padding_info;
     using details::scoped_padder;
@@ -1310,7 +1310,7 @@ SPDLOG_INLINE details::padding_info pattern_formatter::handle_padspec_(
     return details::padding_info{std::min<size_t>(width, max_width), side, truncate};
 }
 
-SPDLOG_INLINE void pattern_formatter::compile_pattern_(const std::string &pattern) {
+XLOG_INLINE void pattern_formatter::compile_pattern_(const std::string &pattern) {
     auto end = pattern.end();
     std::unique_ptr<details::aggregate_formatter> user_chars;
     formatters_.clear();
@@ -1345,4 +1345,4 @@ SPDLOG_INLINE void pattern_formatter::compile_pattern_(const std::string &patter
         formatters_.push_back(std::move(user_chars));
     }
 }
-}  // namespace spdlog
+}  // namespace xlog

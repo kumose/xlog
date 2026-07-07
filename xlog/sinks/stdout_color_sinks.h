@@ -11,7 +11,7 @@
 
 #include <xlog/details/synchronous_factory.h>
 
-namespace spdlog {
+namespace xlog {
     namespace sinks {
 #ifdef _WIN32
         using stdout_color_sink_mt = wincolor_stdout_sink_mt;
@@ -26,19 +26,19 @@ namespace spdlog {
 #endif
     } // namespace sinks
 
-    template<typename Factory = spdlog::synchronous_factory>
+    template<typename Factory = xlog::synchronous_factory>
     std::shared_ptr<logger> stdout_color_mt(const std::string &logger_name,
                                             color_mode mode = color_mode::automatic);
 
-    template<typename Factory = spdlog::synchronous_factory>
+    template<typename Factory = xlog::synchronous_factory>
     std::shared_ptr<logger> stdout_color_st(const std::string &logger_name,
                                             color_mode mode = color_mode::automatic);
 
-    template<typename Factory = spdlog::synchronous_factory>
+    template<typename Factory = xlog::synchronous_factory>
     std::shared_ptr<logger> stderr_color_mt(const std::string &logger_name,
                                             color_mode mode = color_mode::automatic);
 
-    template<typename Factory = spdlog::synchronous_factory>
+    template<typename Factory = xlog::synchronous_factory>
     std::shared_ptr<logger> stderr_color_st(const std::string &logger_name,
                                             color_mode mode = color_mode::automatic);
-} // namespace spdlog
+} // namespace xlog

@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-
+#[[
 kmcmake_cc_binary(
         NAMESPACE ${PROJECT_NAME}
         NAME demo
@@ -27,3 +27,4 @@ kmcmake_cc_binary(
         ${PROJECT_NAME}::xlog
         PUBLIC
 )
+]]

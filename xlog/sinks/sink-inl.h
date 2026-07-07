@@ -7,14 +7,14 @@
 
 #include <xlog/common.h>
 
-SPDLOG_INLINE bool spdlog::sinks::sink::should_log(spdlog::level::level_enum msg_level) const {
+XLOG_INLINE bool xlog::sinks::sink::should_log(xlog::level::level_enum msg_level) const {
     return msg_level >= level_.load(std::memory_order_relaxed);
 }
 
-SPDLOG_INLINE void spdlog::sinks::sink::set_level(level::level_enum log_level) {
+XLOG_INLINE void xlog::sinks::sink::set_level(level::level_enum log_level) {
     level_.store(log_level, std::memory_order_relaxed);
 }
 
-SPDLOG_INLINE spdlog::level::level_enum spdlog::sinks::sink::level() const {
-    return static_cast<spdlog::level::level_enum>(level_.load(std::memory_order_relaxed));
+XLOG_INLINE xlog::level::level_enum xlog::sinks::sink::level() const {
+    return static_cast<xlog::level::level_enum>(level_.load(std::memory_order_relaxed));
 }

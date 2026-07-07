@@ -1,4 +1,4 @@
-#ifndef SPDLOG_NO_TZ_OFFSET
+#ifndef XLOG_NO_TZ_OFFSET
 
 #include "includes.h"
 #include <ctime>
@@ -74,7 +74,7 @@ public:
     }
 };
 
-using spdlog::details::os::utc_minutes_offset;
+using xlog::details::os::utc_minutes_offset;
 
 TEST_CASE("UTC Offset - Western Hemisphere (USA - Standard Time)", "[timezone][west]") {
     // EST5EDT: Eastern Standard Time (UTC-5)
@@ -143,4 +143,4 @@ TEST_CASE("UTC Offset - Edge Case: Invalid Date (Pre-Epoch)", "[timezone][edge]"
 #endif
 }
 
-#endif  // !SPDLOG_NO_TZ_OFFSET
+#endif  // !XLOG_NO_TZ_OFFSET

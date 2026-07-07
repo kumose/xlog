@@ -20,7 +20,7 @@
 #include <sstream>
 #include <string>
 
-namespace spdlog {
+namespace xlog {
 namespace sinks {
 
 /*
@@ -31,7 +31,7 @@ struct daily_filename_calculator {
     static filename_t calc_filename(const filename_t &filename, const tm &now_tm) {
         filename_t basename, ext;
         std::tie(basename, ext) = details::file_helper::split_by_extension(filename);
-        return fmt_lib::format(SPDLOG_FMT_STRING(SPDLOG_FILENAME_T("{}_{:04d}-{:02d}-{:02d}{}")),
+        return fmt_lib::format(XLOG_FMT_STRING(XLOG_FILENAME_T("{}_{:04d}-{:02d}-{:02d}{}")),
                                basename, now_tm.tm_year + 1900, now_tm.tm_mon + 1, now_tm.tm_mday,
                                ext);
     }
@@ -41,14 +41,14 @@ struct daily_filename_calculator {
  * Generator of daily log file names with strftime format.
  * Usages:
  *    auto sink =
- * std::make_shared<spdlog::sinks::daily_file_format_sink_mt>("myapp-%Y-%m-%d:%H:%M:%S.log", hour,
- * minute);" auto logger = spdlog::daily_logger_format_mt("loggername, "myapp-%Y-%m-%d:%X.log",
+ * std::make_shared<xlog::sinks::daily_file_format_sink_mt>("myapp-%Y-%m-%d:%H:%M:%S.log", hour,
+ * minute);" auto logger = xlog::daily_logger_format_mt("loggername, "myapp-%Y-%m-%d:%X.log",
  * hour,  minute)"
  *
  */
 struct daily_filename_format_calculator {
     static filename_t calc_filename(const filename_t &file_path, const tm &now_tm) {
-#if defined(_WIN32) && defined(SPDLOG_WCHAR_FILENAMES)
+#if defined(_WIN32) && defined(XLOG_WCHAR_FILENAMES)
         std::wstringstream stream;
 #else
         std::stringstream stream;
@@ -145,7 +145,7 @@ private:
 
     tm now_tm(log_clock::time_point tp) {
         time_t tnow = log_clock::to_time_t(tp);
-        return spdlog::details::os::localtime(tnow);
+        return xlog::details::os::localtime(tnow);
     }
 
     log_clock::time_point next_rotation_tp_() {
@@ -202,7 +202,7 @@ using daily_file_format_sink_st =
 //
 // factory functions
 //
-template <typename Factory = spdlog::synchronous_factory>
+template <typename Factory = xlog::synchronous_factory>
 inline std::shared_ptr<logger> daily_logger_mt(const std::string &logger_name,
                                                const filename_t &filename,
                                                int hour = 0,
@@ -214,7 +214,7 @@ inline std::shared_ptr<logger> daily_logger_mt(const std::string &logger_name,
                                                                truncate, max_files, event_handlers);
 }
 
-template <typename Factory = spdlog::synchronous_factory>
+template <typename Factory = xlog::synchronous_factory>
 inline std::shared_ptr<logger> daily_logger_format_mt(
     const std::string &logger_name,
     const filename_t &filename,
@@ -227,7 +227,7 @@ inline std::shared_ptr<logger> daily_logger_format_mt(
         logger_name, filename, hour, minute, truncate, max_files, event_handlers);
 }
 
-template <typename Factory = spdlog::synchronous_factory>
+template <typename Factory = xlog::synchronous_factory>
 inline std::shared_ptr<logger> daily_logger_st(const std::string &logger_name,
                                                const filename_t &filename,
                                                int hour = 0,
@@ -239,7 +239,7 @@ inline std::shared_ptr<logger> daily_logger_st(const std::string &logger_name,
                                                                truncate, max_files, event_handlers);
 }
 
-template <typename Factory = spdlog::synchronous_factory>
+template <typename Factory = xlog::synchronous_factory>
 inline std::shared_ptr<logger> daily_logger_format_st(
     const std::string &logger_name,
     const filename_t &filename,
@@ -251,4 +251,4 @@ inline std::shared_ptr<logger> daily_logger_format_st(
     return Factory::template create<sinks::daily_file_format_sink_st>(
         logger_name, filename, hour, minute, truncate, max_files, event_handlers);
 }
-}  // namespace spdlog
+}  // namespace xlog

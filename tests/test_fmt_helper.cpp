@@ -1,33 +1,33 @@
 
 #include "includes.h"
 
-using spdlog::memory_buf_t;
-using spdlog::details::to_string_view;
+using xlog::memory_buf_t;
+using xlog::details::to_string_view;
 
 void test_pad2(int n, const char *expected) {
     memory_buf_t buf;
-    spdlog::details::fmt_helper::pad2(n, buf);
+    xlog::details::fmt_helper::pad2(n, buf);
 
     REQUIRE(to_string_view(buf) == expected);
 }
 
 void test_pad3(uint32_t n, const char *expected) {
     memory_buf_t buf;
-    spdlog::details::fmt_helper::pad3(n, buf);
+    xlog::details::fmt_helper::pad3(n, buf);
 
     REQUIRE(to_string_view(buf) == expected);
 }
 
 void test_pad6(std::size_t n, const char *expected) {
     memory_buf_t buf;
-    spdlog::details::fmt_helper::pad6(n, buf);
+    xlog::details::fmt_helper::pad6(n, buf);
 
     REQUIRE(to_string_view(buf) == expected);
 }
 
 void test_pad9(std::size_t n, const char *expected) {
     memory_buf_t buf;
-    spdlog::details::fmt_helper::pad9(n, buf);
+    xlog::details::fmt_helper::pad9(n, buf);
 
     REQUIRE(to_string_view(buf) == expected);
 }

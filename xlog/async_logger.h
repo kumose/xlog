@@ -16,7 +16,7 @@
 
 #include <xlog/logger.h>
 
-namespace spdlog {
+namespace xlog {
 
 // Async overflow policy - block by default.
 enum class async_overflow_policy {
@@ -30,7 +30,7 @@ namespace details {
 class thread_pool;
 }
 
-class SPDLOG_API async_logger final : public std::enable_shared_from_this<async_logger>,
+class XLOG_API async_logger final : public std::enable_shared_from_this<async_logger>,
                                       public logger {
     friend class details::thread_pool;
 
@@ -67,4 +67,4 @@ private:
     std::weak_ptr<details::thread_pool> thread_pool_;
     async_overflow_policy overflow_policy_;
 };
-}  // namespace spdlog
+}  // namespace xlog

@@ -29,7 +29,7 @@ kmcmake_cc_library(
         xlog.cc
         stdout_sinks.cc
         DEFINES
-        -DSPDLOG_COMPILED_LIB
+        -DXLOG_COMPILED_LIB
         CXXOPTS
         ${KMCMAKE_CXX_OPTIONS}
         PLINKS

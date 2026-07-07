@@ -7,25 +7,25 @@
 #include <xlog/details/registry.h>
 
 //
-// Init levels and patterns from env variables SPDLOG_LEVEL
+// Init levels and patterns from env variables XLOG_LEVEL
 // Inspired from Rust's "env_logger" crate (https://crates.io/crates/env_logger).
 // Note - fallback to "info" level on unrecognized levels
 //
 // Examples:
 //
 // set global level to debug:
-// export SPDLOG_LEVEL=debug
+// export XLOG_LEVEL=debug
 //
 // turn off all logging except for logger1:
-// export SPDLOG_LEVEL="*=off,logger1=debug"
+// export XLOG_LEVEL="*=off,logger1=debug"
 //
 
 // turn off all logging except for logger1 and logger2:
-// export SPDLOG_LEVEL="off,logger1=debug,logger2=info"
+// export XLOG_LEVEL="off,logger1=debug,logger2=info"
 
-namespace spdlog {
+namespace xlog {
 namespace cfg {
-inline void load_env_levels(const char* var = "SPDLOG_LEVEL") {
+inline void load_env_levels(const char* var = "XLOG_LEVEL") {
     auto env_val = details::os::getenv(var);
     if (!env_val.empty()) {
         helpers::load_levels(env_val);
@@ -33,4 +33,4 @@ inline void load_env_levels(const char* var = "SPDLOG_LEVEL") {
 }
 
 }  // namespace cfg
-}  // namespace spdlog
+}  // namespace xlog

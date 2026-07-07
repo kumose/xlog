@@ -3,7 +3,7 @@
 
 #pragma once
 
-namespace spdlog {
+namespace xlog {
 class logger;
 class formatter;
 
@@ -15,4 +15,4 @@ namespace level {
 enum level_enum : int;
 }
 
-}  // namespace spdlog
+}  // namespace xlog

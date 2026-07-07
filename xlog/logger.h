@@ -18,20 +18,20 @@
 #include <xlog/details/backtracer.h>
 #include <xlog/details/log_msg.h>
 
-#ifdef SPDLOG_WCHAR_TO_UTF8_SUPPORT
+#ifdef XLOG_WCHAR_TO_UTF8_SUPPORT
 #ifndef _WIN32
-#error SPDLOG_WCHAR_TO_UTF8_SUPPORT only supported on windows
+#error XLOG_WCHAR_TO_UTF8_SUPPORT only supported on windows
 #endif
 #include <xlog/details/os.h>
 #endif
 
 #include <vector>
 
-#ifndef SPDLOG_NO_EXCEPTIONS
-#define SPDLOG_LOGGER_CATCH(location)                                                 \
+#ifndef XLOG_NO_EXCEPTIONS
+#define XLOG_LOGGER_CATCH(location)                                                 \
     catch (const std::exception &ex) {                                                \
         if (location.filename) {                                                      \
-            err_handler_(fmt_lib::format(SPDLOG_FMT_STRING("{} [{}({})]"), ex.what(), \
+            err_handler_(fmt_lib::format(XLOG_FMT_STRING("{} [{}({})]"), ex.what(), \
                                          location.filename, location.line));          \
         } else {                                                                      \
             err_handler_(ex.what());                                                  \
@@ -42,12 +42,12 @@
         throw;                                                                        \
     }
 #else
-#define SPDLOG_LOGGER_CATCH(location)
+#define XLOG_LOGGER_CATCH(location)
 #endif
 
-namespace spdlog {
+namespace xlog {
 
-class SPDLOG_API logger {
+class XLOG_API logger {
 public:
     // Empty logger
     explicit logger(std::string name)
@@ -71,9 +71,9 @@ public:
     virtual ~logger() = default;
 
     logger(const logger &other);
-    logger(logger &&other) SPDLOG_NOEXCEPT;
-    logger &operator=(logger other) SPDLOG_NOEXCEPT;
-    void swap(spdlog::logger &other) SPDLOG_NOEXCEPT;
+    logger(logger &&other) XLOG_NOEXCEPT;
+    logger &operator=(logger other) XLOG_NOEXCEPT;
+    void swap(xlog::logger &other) XLOG_NOEXCEPT;
 
     template <typename... Args>
     void log(source_loc loc, level::level_enum lvl, format_string_t<Args...> fmt, Args &&...args) {
@@ -155,7 +155,7 @@ public:
         log(level::critical, fmt, std::forward<Args>(args)...);
     }
 
-#ifdef SPDLOG_WCHAR_TO_UTF8_SUPPORT
+#ifdef XLOG_WCHAR_TO_UTF8_SUPPORT
     template <typename... Args>
     void log(source_loc loc, level::level_enum lvl, wformat_string_t<Args...> fmt, Args &&...args) {
         log_(loc, lvl, details::to_string_view(fmt), std::forward<Args>(args)...);
@@ -307,8 +307,8 @@ public:
 protected:
     std::string name_;
     std::vector<sink_ptr> sinks_;
-    spdlog::level_t level_{level::info};
-    spdlog::level_t flush_level_{level::off};
+    xlog::level_t level_{level::info};
+    xlog::level_t flush_level_{level::off};
     err_handler custom_err_handler_{nullptr};
     details::backtracer tracer_;
 
@@ -320,9 +320,9 @@ protected:
         if (!log_enabled && !traceback_enabled) {
             return;
         }
-        SPDLOG_TRY {
+        XLOG_TRY {
             memory_buf_t buf;
-#ifdef SPDLOG_USE_STD_FORMAT
+#ifdef XLOG_USE_STD_FORMAT
             fmt_lib::vformat_to(std::back_inserter(buf), fmt, fmt_lib::make_format_args(args...));
 #else
             fmt::vformat_to(fmt::appender(buf), fmt, fmt::make_format_args(args...));
@@ -331,10 +331,10 @@ protected:
             details::log_msg log_msg(loc, name_, lvl, string_view_t(buf.data(), buf.size()));
             log_it_(log_msg, log_enabled, traceback_enabled);
         }
-        SPDLOG_LOGGER_CATCH(loc)
+        XLOG_LOGGER_CATCH(loc)
     }
 
-#ifdef SPDLOG_WCHAR_TO_UTF8_SUPPORT
+#ifdef XLOG_WCHAR_TO_UTF8_SUPPORT
     template <typename... Args>
     void log_(source_loc loc, level::level_enum lvl, wstring_view_t fmt, Args &&...args) {
         bool log_enabled = should_log(lvl);
@@ -342,7 +342,7 @@ protected:
         if (!log_enabled && !traceback_enabled) {
             return;
         }
-        SPDLOG_TRY {
+        XLOG_TRY {
             // format to wmemory_buffer and convert to utf8
             wmemory_buf_t wbuf;
             fmt_lib::vformat_to(std::back_inserter(wbuf), fmt,
@@ -353,9 +353,9 @@ protected:
             details::log_msg log_msg(loc, name_, lvl, string_view_t(buf.data(), buf.size()));
             log_it_(log_msg, log_enabled, traceback_enabled);
         }
-        SPDLOG_LOGGER_CATCH(loc)
+        XLOG_LOGGER_CATCH(loc)
     }
-#endif  // SPDLOG_WCHAR_TO_UTF8_SUPPORT
+#endif  // XLOG_WCHAR_TO_UTF8_SUPPORT
 
     // log the given message (if the given log level is high enough),
     // and save backtrace (if backtrace is enabled).
@@ -372,4 +372,4 @@ protected:
 
 void swap(logger &a, logger &b) noexcept;
 
-}  // namespace spdlog
+}  // namespace xlog

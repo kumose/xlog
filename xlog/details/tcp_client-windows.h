@@ -19,7 +19,7 @@
 #pragma comment(lib, "Mswsock.lib")
 #pragma comment(lib, "AdvApi32.lib")
 
-namespace spdlog {
+namespace xlog {
 namespace details {
 class tcp_client {
     SOCKET socket_ = INVALID_SOCKET;
@@ -214,4 +214,4 @@ public:
     }
 };
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog

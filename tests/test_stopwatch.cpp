@@ -8,7 +8,7 @@ TEST_CASE("stopwatch1", "[stopwatch]") {
     milliseconds wait_ms(500);
     milliseconds tolerance_ms(250);
     auto start = clock::now();
-    spdlog::stopwatch sw;
+    xlog::stopwatch sw;
     std::this_thread::sleep_for(wait_ms);
     auto stop = clock::now();
     auto diff_ms = std::chrono::duration_cast<milliseconds>(stop - start);
@@ -17,7 +17,7 @@ TEST_CASE("stopwatch1", "[stopwatch]") {
 }
 
 TEST_CASE("stopwatch2", "[stopwatch]") {
-    using spdlog::sinks::test_sink_st;
+    using xlog::sinks::test_sink_st;
     using std::chrono::duration_cast;
     using std::chrono::milliseconds;
     using clock = std::chrono::steady_clock;
@@ -28,8 +28,8 @@ TEST_CASE("stopwatch2", "[stopwatch]") {
     auto test_sink = std::make_shared<test_sink_st>();
 
     auto start = clock::now();
-    spdlog::stopwatch sw;
-    spdlog::logger logger("test-stopwatch", test_sink);
+    xlog::stopwatch sw;
+    xlog::logger logger("test-stopwatch", test_sink);
     logger.set_pattern("%v");
     std::this_thread::sleep_for(wait_duration);
     auto stop = clock::now();

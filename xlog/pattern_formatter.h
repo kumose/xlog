@@ -16,7 +16,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace spdlog {
+namespace xlog {
 namespace details {
 
 // padding information.
@@ -37,7 +37,7 @@ struct padding_info {
     bool enabled_ = false;
 };
 
-class SPDLOG_API flag_formatter {
+class XLOG_API flag_formatter {
 public:
     explicit flag_formatter(padding_info padinfo)
         : padinfo_(padinfo) {}
@@ -53,7 +53,7 @@ protected:
 
 }  // namespace details
 
-class SPDLOG_API custom_flag_formatter : public details::flag_formatter {
+class XLOG_API custom_flag_formatter : public details::flag_formatter {
 public:
     virtual std::unique_ptr<custom_flag_formatter> clone() const = 0;
 
@@ -62,18 +62,18 @@ public:
     }
 };
 
-class SPDLOG_API pattern_formatter final : public formatter {
+class XLOG_API pattern_formatter final : public formatter {
 public:
     using custom_flags = std::unordered_map<char, std::unique_ptr<custom_flag_formatter>>;
 
     explicit pattern_formatter(std::string pattern,
                                pattern_time_type time_type = pattern_time_type::local,
-                               std::string eol = spdlog::details::os::default_eol,
+                               std::string eol = xlog::details::os::default_eol,
                                custom_flags custom_user_flags = custom_flags());
 
     // use default pattern is not given
     explicit pattern_formatter(pattern_time_type time_type = pattern_time_type::local,
-                               std::string eol = spdlog::details::os::default_eol);
+                               std::string eol = xlog::details::os::default_eol);
 
     pattern_formatter(const pattern_formatter &other) = delete;
     pattern_formatter &operator=(const pattern_formatter &other) = delete;
@@ -111,5 +111,5 @@ private:
 
     void compile_pattern_(const std::string &pattern);
 };
-}  // namespace spdlog
+}  // namespace xlog
 

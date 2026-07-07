@@ -6,7 +6,7 @@
 #include <xlog/details/log_msg.h>
 #include <xlog/fmt/fmt.h>
 
-namespace spdlog {
+namespace xlog {
 
 class formatter {
 public:
@@ -14,4 +14,4 @@ public:
     virtual void format(const details::log_msg &msg, memory_buf_t &dest) = 0;
     virtual std::unique_ptr<formatter> clone() const = 0;
 };
-}  // namespace spdlog
+}  // namespace xlog

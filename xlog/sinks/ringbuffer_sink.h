@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-namespace spdlog {
+namespace xlog {
 namespace sinks {
 /*
  * Ring buffer sink
@@ -48,7 +48,7 @@ public:
         for (size_t i = (items_available - n_items); i < items_available; i++) {
             memory_buf_t formatted;
             base_sink<Mutex>::formatter_->format(q_.at(i), formatted);
-            ret.push_back(SPDLOG_BUF_TO_STRING(formatted));
+            ret.push_back(XLOG_BUF_TO_STRING(formatted));
         }
         return ret;
     }
@@ -68,4 +68,4 @@ using ringbuffer_sink_st = ringbuffer_sink<details::null_mutex>;
 
 }  // namespace sinks
 
-}  // namespace spdlog
+}  // namespace xlog

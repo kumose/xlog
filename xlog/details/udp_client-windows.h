@@ -21,7 +21,7 @@
 #pragma comment(lib, "AdvApi32.lib")
 #endif
 
-namespace spdlog {
+namespace xlog {
 namespace details {
 class udp_client {
     static constexpr int TX_BUFFER_SIZE = 1024 * 10;
@@ -95,4 +95,4 @@ public:
     }
 };
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog

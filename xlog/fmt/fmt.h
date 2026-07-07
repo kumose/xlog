@@ -11,16 +11,16 @@
 //
 #include <xlog/tweakme.h>
 
-#if defined(SPDLOG_USE_STD_FORMAT)  // SPDLOG_USE_STD_FORMAT is defined - use std::format
+#if defined(XLOG_USE_STD_FORMAT)  // XLOG_USE_STD_FORMAT is defined - use std::format
 #include <format>
-#elif !defined(SPDLOG_FMT_EXTERNAL)
-#if !defined(SPDLOG_COMPILED_LIB) && !defined(FMT_HEADER_ONLY)
+#elif !defined(XLOG_FMT_EXTERNAL)
+#if !defined(XLOG_COMPILED_LIB) && !defined(FMT_HEADER_ONLY)
 #define FMT_HEADER_ONLY
 #endif
 #ifndef FMT_USE_WINDOWS_H
 #define FMT_USE_WINDOWS_H 0
 #endif
 #include <xlog/fmt/bundled/format.h>
-#else  // SPDLOG_FMT_EXTERNAL is defined - use external fmtlib
+#else  // XLOG_FMT_EXTERNAL is defined - use external fmtlib
 #include <fmt/format.h>
 #endif

@@ -15,10 +15,10 @@
 #include <functional>
 #include <mutex>
 #include <thread>
-namespace spdlog {
+namespace xlog {
 namespace details {
 
-class SPDLOG_API periodic_worker {
+class XLOG_API periodic_worker {
 public:
     template <typename Rep, typename Period>
     periodic_worker(const std::function<void()> &callback_fun,
@@ -51,5 +51,5 @@ private:
     std::condition_variable cv_;
 };
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog
 

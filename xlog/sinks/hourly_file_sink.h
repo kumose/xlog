@@ -18,7 +18,7 @@
 #include <mutex>
 #include <string>
 
-namespace spdlog {
+namespace xlog {
 namespace sinks {
 
 /*
@@ -29,7 +29,7 @@ struct hourly_filename_calculator {
     static filename_t calc_filename(const filename_t &filename, const tm &now_tm) {
         filename_t basename, ext;
         std::tie(basename, ext) = details::file_helper::split_by_extension(filename);
-        return fmt_lib::format(SPDLOG_FILENAME_T("{}_{:04d}-{:02d}-{:02d}_{:02d}{}"), basename,
+        return fmt_lib::format(XLOG_FILENAME_T("{}_{:04d}-{:02d}-{:02d}_{:02d}{}"), basename,
                                now_tm.tm_year + 1900, now_tm.tm_mon + 1, now_tm.tm_mday,
                                now_tm.tm_hour, ext);
     }
@@ -119,7 +119,7 @@ private:
 
     tm now_tm(log_clock::time_point tp) {
         time_t tnow = log_clock::to_time_t(tp);
-        return spdlog::details::os::localtime(tnow);
+        return xlog::details::os::localtime(tnow);
     }
 
     log_clock::time_point next_rotation_tp_() {
@@ -147,7 +147,7 @@ private:
             bool ok = remove_if_exists(old_filename) == 0;
             if (!ok) {
                 filenames_q_.push_back(std::move(current_file));
-                SPDLOG_THROW(spdlog_ex(
+                XLOG_THROW(spdlog_ex(
                     "Failed removing hourly file " + filename_to_str(old_filename), errno));
             }
         }
@@ -171,7 +171,7 @@ using hourly_file_sink_st = hourly_file_sink<details::null_mutex>;
 //
 // factory functions
 //
-template <typename Factory = spdlog::synchronous_factory>
+template <typename Factory = xlog::synchronous_factory>
 inline std::shared_ptr<logger> hourly_logger_mt(const std::string &logger_name,
                                                 const filename_t &filename,
                                                 bool truncate = false,
@@ -181,7 +181,7 @@ inline std::shared_ptr<logger> hourly_logger_mt(const std::string &logger_name,
                                                                 max_files, event_handlers);
 }
 
-template <typename Factory = spdlog::synchronous_factory>
+template <typename Factory = xlog::synchronous_factory>
 inline std::shared_ptr<logger> hourly_logger_st(const std::string &logger_name,
                                                 const filename_t &filename,
                                                 bool truncate = false,
@@ -190,4 +190,4 @@ inline std::shared_ptr<logger> hourly_logger_st(const std::string &logger_name,
     return Factory::template create<sinks::hourly_file_sink_st>(logger_name, filename, truncate,
                                                                 max_files, event_handlers);
 }
-}  // namespace spdlog
+}  // namespace xlog

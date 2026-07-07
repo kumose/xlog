@@ -11,10 +11,10 @@
 //
 // Usage:
 //
-// spdlog::stopwatch sw;
+// xlog::stopwatch sw;
 // ...
-// spdlog::debug("Elapsed: {} seconds", sw);    =>  "Elapsed 0.005116733 seconds"
-// spdlog::info("Elapsed: {:.6} seconds", sw);  =>  "Elapsed 0.005163 seconds"
+// xlog::debug("Elapsed: {} seconds", sw);    =>  "Elapsed 0.005116733 seconds"
+// xlog::info("Elapsed: {:.6} seconds", sw);  =>  "Elapsed 0.005163 seconds"
 //
 //
 // If other units are needed (e.g. millis instead of double), include "fmt/chrono.h" and use
@@ -24,9 +24,9 @@
 //..
 // using std::chrono::duration_cast;
 // using std::chrono::milliseconds;
-// spdlog::info("Elapsed {}", duration_cast<milliseconds>(sw.elapsed())); => "Elapsed 5ms"
+// xlog::info("Elapsed {}", duration_cast<milliseconds>(sw.elapsed())); => "Elapsed 5ms"
 
-namespace spdlog {
+namespace xlog {
 class stopwatch {
     using clock = std::chrono::steady_clock;
     std::chrono::time_point<clock> start_tp_;
@@ -45,11 +45,11 @@ public:
 
     void reset() { start_tp_ = clock::now(); }
 };
-}  // namespace spdlog
+}  // namespace xlog
 
 // Support for fmt formatting  (e.g. "{:012.9}" or just "{}")
 namespace
-#ifdef SPDLOG_USE_STD_FORMAT
+#ifdef XLOG_USE_STD_FORMAT
     std
 #else
     fmt
@@ -57,9 +57,9 @@ namespace
 {
 
 template <>
-struct formatter<spdlog::stopwatch> : formatter<double> {
+struct formatter<xlog::stopwatch> : formatter<double> {
     template <typename FormatContext>
-    auto format(const spdlog::stopwatch &sw, FormatContext &ctx) const -> decltype(ctx.out()) {
+    auto format(const xlog::stopwatch &sw, FormatContext &ctx) const -> decltype(ctx.out()) {
         return formatter<double>::format(sw.elapsed().count(), ctx);
     }
 };

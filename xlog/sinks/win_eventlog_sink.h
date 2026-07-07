@@ -43,7 +43,7 @@ Windows Registry Editor Version 5.00
 #include <string>
 #include <vector>
 
-namespace spdlog {
+namespace xlog {
 namespace sinks {
 
 namespace win_eventlog {
@@ -53,12 +53,12 @@ namespace internal {
 struct local_alloc_t {
     HLOCAL hlocal_;
 
-    SPDLOG_CONSTEXPR local_alloc_t() SPDLOG_NOEXCEPT : hlocal_(nullptr) {}
+    XLOG_CONSTEXPR local_alloc_t() XLOG_NOEXCEPT : hlocal_(nullptr) {}
 
     local_alloc_t(local_alloc_t const &) = delete;
     local_alloc_t &operator=(local_alloc_t const &) = delete;
 
-    ~local_alloc_t() SPDLOG_NOEXCEPT {
+    ~local_alloc_t() XLOG_NOEXCEPT {
         if (hlocal_) {
             LocalFree(hlocal_);
         }
@@ -107,7 +107,7 @@ public:
         sid_t result;
         result.buffer_.resize(sid_length);
         if (!::CopySid(sid_length, (PSID)result.as_sid(), psid)) {
-            SPDLOG_THROW(win32_error("CopySid"));
+            XLOG_THROW(win32_error("CopySid"));
         }
 
         return result;
@@ -123,7 +123,7 @@ public:
             HANDLE token_handle_ = INVALID_HANDLE_VALUE;
             explicit process_token_t(HANDLE process) {
                 if (!::OpenProcessToken(process, TOKEN_QUERY, &token_handle_)) {
-                    SPDLOG_THROW(win32_error("OpenProcessToken"));
+                    XLOG_THROW(win32_error("OpenProcessToken"));
                 }
             }
 
@@ -137,14 +137,14 @@ public:
         DWORD tusize = 0;
         if (::GetTokenInformation(current_process_token.token_handle_, TokenUser, NULL, 0,
                                   &tusize)) {
-            SPDLOG_THROW(win32_error("GetTokenInformation should fail"));
+            XLOG_THROW(win32_error("GetTokenInformation should fail"));
         }
 
         // get user token
         std::vector<unsigned char> buffer(static_cast<size_t>(tusize));
         if (!::GetTokenInformation(current_process_token.token_handle_, TokenUser,
                                    (LPVOID)buffer.data(), tusize, &tusize)) {
-            SPDLOG_THROW(win32_error("GetTokenInformation"));
+            XLOG_THROW(win32_error("GetTokenInformation"));
         }
 
         // create a wrapper of the SID data as stored in the user token
@@ -195,7 +195,7 @@ private:
         if (!hEventLog_) {
             hEventLog_ = ::RegisterEventSourceA(nullptr, source_.c_str());
             if (!hEventLog_ || hEventLog_ == (HANDLE)ERROR_ACCESS_DENIED) {
-                SPDLOG_THROW(internal::win32_error("RegisterEventSource"));
+                XLOG_THROW(internal::win32_error("RegisterEventSource"));
             }
         }
 
@@ -211,7 +211,7 @@ protected:
         base_sink<Mutex>::formatter_->format(msg, formatted);
         formatted.push_back('\0');
 
-#ifdef SPDLOG_WCHAR_TO_UTF8_SUPPORT
+#ifdef XLOG_WCHAR_TO_UTF8_SUPPORT
         wmemory_buf_t buf;
         details::os::utf8_to_wstrbuf(string_view_t(formatted.data(), formatted.size()), buf);
 
@@ -227,7 +227,7 @@ protected:
 #endif
 
         if (!succeeded) {
-            SPDLOG_THROW(win32_error("ReportEvent"));
+            XLOG_THROW(win32_error("ReportEvent"));
         }
     }
 
@@ -257,4 +257,4 @@ using win_eventlog_sink_mt = win_eventlog::win_eventlog_sink<std::mutex>;
 using win_eventlog_sink_st = win_eventlog::win_eventlog_sink<details::null_mutex>;
 
 }  // namespace sinks
-}  // namespace spdlog
+}  // namespace xlog

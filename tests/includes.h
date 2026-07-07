@@ -4,7 +4,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"  // Workaround for GCC 12
 #endif
-#include <catch2/catch_all.hpp>
+#include "doctest.h"
 #if defined(__GNUC__) && __GNUC__ == 12
 #pragma GCC diagnostic pop
 #endif
@@ -21,17 +21,17 @@
 #include <iomanip>
 #include <stdlib.h>
 
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
+#define XLOG_ACTIVE_LEVEL XLOG_LEVEL_DEBUG
 
-#undef SPDLOG_LEVEL_NAMES
-#undef SPDLOG_SHORT_LEVEL_NAMES
+#undef XLOG_LEVEL_NAMES
+#undef XLOG_SHORT_LEVEL_NAMES
 
 #include <xlog/xlog.h>
 #include <xlog/async.h>
 #include <xlog/details/fmt_helper.h>
 #include <xlog/details/os.h>
 
-#ifndef SPDLOG_NO_TLS
+#ifndef XLOG_NO_TLS
 #include <xlog/mdc.h>
 #endif
 

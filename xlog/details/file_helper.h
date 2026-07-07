@@ -6,14 +6,14 @@
 #include <xlog/common.h>
 #include <tuple>
 
-namespace spdlog {
+namespace xlog {
 namespace details {
 
 // Helper class for file sinks.
 // When failing to open a file, retry several times(5) with a delay interval(10 ms).
 // Throw spdlog_ex exception on errors.
 
-class SPDLOG_API file_helper {
+class XLOG_API file_helper {
 public:
     file_helper() = default;
     explicit file_helper(const file_event_handlers &event_handlers);
@@ -54,4 +54,4 @@ private:
     file_event_handlers event_handlers_;
 };
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog

@@ -8,26 +8,26 @@
 #include <xlog/fmt/fmt.h>
 #include <type_traits>
 
-#ifdef SPDLOG_USE_STD_FORMAT
+#ifdef XLOG_USE_STD_FORMAT
 #include <charconv>
 #include <limits>
 #endif
 
 // Some fmt helpers to efficiently format and pad ints and strings
-namespace spdlog {
+namespace xlog {
 namespace details {
 namespace fmt_helper {
 
-inline void append_string_view(spdlog::string_view_t view, memory_buf_t &dest) {
+inline void append_string_view(xlog::string_view_t view, memory_buf_t &dest) {
     auto *buf_ptr = view.data();
     dest.append(buf_ptr, buf_ptr + view.size());
 }
 
-#ifdef SPDLOG_USE_STD_FORMAT
+#ifdef XLOG_USE_STD_FORMAT
 template <typename T>
 inline void append_int(T n, memory_buf_t &dest) {
     // Buffer should be large enough to hold all digits (digits10 + 1) and a sign
-    SPDLOG_CONSTEXPR const auto BUF_SIZE = std::numeric_limits<T>::digits10 + 2;
+    XLOG_CONSTEXPR const auto BUF_SIZE = std::numeric_limits<T>::digits10 + 2;
     char buf[BUF_SIZE];
 
     auto [ptr, ec] = std::to_chars(buf, buf + BUF_SIZE, n, 10);
@@ -46,7 +46,7 @@ inline void append_int(T n, memory_buf_t &dest) {
 #endif
 
 template <typename T>
-SPDLOG_CONSTEXPR_FUNC unsigned int count_digits_fallback(T n) {
+XLOG_CONSTEXPR_FUNC unsigned int count_digits_fallback(T n) {
     // taken from fmt: https://github.com/fmtlib/fmt/blob/8.0.1/include/fmt/format.h#L899-L912
     unsigned int count = 1;
     for (;;) {
@@ -66,7 +66,7 @@ template <typename T>
 inline unsigned int count_digits(T n) {
     using count_type =
         typename std::conditional<(sizeof(T) > sizeof(uint32_t)), uint64_t, uint32_t>::type;
-#ifdef SPDLOG_USE_STD_FORMAT
+#ifdef XLOG_USE_STD_FORMAT
     return count_digits_fallback(static_cast<count_type>(n));
 #else
     return static_cast<unsigned int>(fmt::
@@ -88,7 +88,7 @@ inline void pad2(int n, memory_buf_t &dest) {
         dest.push_back(static_cast<char>('0' + n % 10));
     } else  // unlikely, but just in case, let fmt deal with it
     {
-        fmt_lib::format_to(std::back_inserter(dest), SPDLOG_FMT_STRING("{:02}"), n);
+        fmt_lib::format_to(std::back_inserter(dest), XLOG_FMT_STRING("{:02}"), n);
     }
 }
 
@@ -138,4 +138,4 @@ inline ToDuration time_fraction(log_clock::time_point tp) {
 
 }  // namespace fmt_helper
 }  // namespace details
-}  // namespace spdlog
+}  // namespace xlog
