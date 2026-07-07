@@ -45,7 +45,3 @@ protected:
 };
 }  // namespace sinks
 }  // namespace spdlog
-
-#ifdef SPDLOG_HEADER_ONLY
-#include "base_sink-inl.h"
-#endif

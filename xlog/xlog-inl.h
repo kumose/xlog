@@ -3,10 +3,7 @@
 
 #pragma once
 
-#ifndef SPDLOG_HEADER_ONLY
 #include <xlog/xlog.h>
-#endif
-
 #include <xlog/common.h>
 #include <xlog/pattern_formatter.h>
 

@@ -53,6 +53,3 @@ private:
 }  // namespace details
 }  // namespace spdlog
 
-#ifdef SPDLOG_HEADER_ONLY
-#include "periodic_worker-inl.h"
-#endif

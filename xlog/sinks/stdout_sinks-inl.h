@@ -3,10 +3,7 @@
 
 #pragma once
 
-#ifndef SPDLOG_HEADER_ONLY
 #include <xlog/sinks/stdout_sinks.h>
-#endif
-
 #include <memory>
 #include <xlog/details/console_globals.h>
 #include <xlog/pattern_formatter.h>

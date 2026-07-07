@@ -3,9 +3,7 @@
 
 #pragma once
 
-#ifndef SPDLOG_HEADER_ONLY
 #include <xlog/cfg/helpers.h>
-#endif
 
 #include <xlog/details/os.h>
 #include <xlog/details/registry.h>

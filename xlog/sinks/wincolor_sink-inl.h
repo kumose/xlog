@@ -3,10 +3,7 @@
 
 #pragma once
 
-#ifndef SPDLOG_HEADER_ONLY
 #include <xlog/sinks/wincolor_sink.h>
-#endif
-
 #include <xlog/details/windows_include.h>
 #include <wincon.h>
 

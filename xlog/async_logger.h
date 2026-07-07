@@ -68,7 +68,3 @@ private:
     async_overflow_policy overflow_policy_;
 };
 }  // namespace spdlog
-
-#ifdef SPDLOG_HEADER_ONLY
-#include "async_logger-inl.h"
-#endif

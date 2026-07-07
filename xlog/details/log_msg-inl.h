@@ -3,10 +3,7 @@
 
 #pragma once
 
-#ifndef SPDLOG_HEADER_ONLY
 #include <xlog/details/log_msg.h>
-#endif
-
 #include <xlog/details/os.h>
 
 namespace spdlog {

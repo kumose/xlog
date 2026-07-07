@@ -3,9 +3,8 @@
 
 #pragma once
 
-#ifndef SPDLOG_HEADER_ONLY
 #include <xlog/details/backtracer.h>
-#endif
+
 namespace spdlog {
 namespace details {
 SPDLOG_INLINE backtracer::backtracer(const backtracer &other) {

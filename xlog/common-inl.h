@@ -3,10 +3,7 @@
 
 #pragma once
 
-#ifndef SPDLOG_HEADER_ONLY
 #include <xlog/common.h>
-#endif
-
 #include <algorithm>
 #include <iterator>
 

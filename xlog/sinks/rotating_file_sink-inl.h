@@ -3,10 +3,7 @@
 
 #pragma once
 
-#ifndef SPDLOG_HEADER_ONLY
 #include <xlog/sinks/rotating_file_sink.h>
-#endif
-
 #include <xlog/common.h>
 
 #include <xlog/details/file_helper.h>

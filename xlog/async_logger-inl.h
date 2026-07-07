@@ -3,9 +3,7 @@
 
 #pragma once
 
-#ifndef SPDLOG_HEADER_ONLY
 #include <xlog/async_logger.h>
-#endif
 
 #include <xlog/details/thread_pool.h>
 #include <xlog/sinks/sink.h>

@@ -3,10 +3,7 @@
 
 #pragma once
 
-#ifndef SPDLOG_HEADER_ONLY
 #include <xlog/sinks/ansicolor_sink.h>
-#endif
-
 #include <xlog/details/os.h>
 #include <xlog/pattern_formatter.h>
 

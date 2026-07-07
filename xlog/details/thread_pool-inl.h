@@ -3,10 +3,7 @@
 
 #pragma once
 
-#ifndef SPDLOG_HEADER_ONLY
 #include <xlog/details/thread_pool.h>
-#endif
-
 #include <cassert>
 #include <xlog/common.h>
 
