@@ -37,12 +37,6 @@ if (KMCMAKE_BUILD_BENCHMARK)
 endif ()
 
 find_package(Threads REQUIRED)
-find_package(fmt REQUIRED)
-
-get_target_property(FMT_INCLUDE_DIR fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
-message(STATUS "fmt include = ${FMT_INCLUDE_DIR}")
-
-include_directories(${FMT_INCLUDE_DIR})
 
 ############################################################
 #
@@ -52,7 +46,6 @@ include_directories(${FMT_INCLUDE_DIR})
 ##########################################################
 set(KMCMAKE_DEPS_LINK
         #${TURBO_LIB}
-        fmt::fmt
         ${KMCMAKE_SYSTEM_DYLINK}
         )
 list(REMOVE_DUPLICATES KMCMAKE_DEPS_LINK)

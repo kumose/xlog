@@ -21,9 +21,15 @@ kmcmake_cc_library(
         NAMESPACE ${PROJECT_NAME}
         NAME xlog
         SOURCES
-        format.cc
-        logger.cc
+        async.cc
+        bundled_fmtlib_format.cc
+        cfg.cc
+        color_sinks.cc
+        file_sinks.cc
         xlog.cc
+        stdout_sinks.cc
+        DEFINES
+        -DSPDLOG_COMPILED_LIB
         CXXOPTS
         ${KMCMAKE_CXX_OPTIONS}
         PLINKS

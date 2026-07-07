@@ -1,143 +1,379 @@
-// Copyright (C) Kumo inc. and its affiliates.
-// Author: Jeff.li lijippy@163.com
-// All rights reserved.
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published
-// by the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
+// Copyright(c) 2015-present, Gabi Melman & spdlog contributors.
+// Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 #pragma once
 
-#include <iostream>
-#include <array>
+// Thread safe logger (except for set_error_handler())
+// Has name, log level, vector of std::shared sink pointers and formatter
+// Upon each log write the logger:
+// 1. Checks if its log level is enough to log the message and if yes:
+// 2. Call the underlying sinks to do the job.
+// 3. Each sink use its own private copy of a formatter to format the message
+// and send to its destination.
+//
+// The use of private formatter per sink provides the opportunity to cache some
+// formatted data, and support for different format per sink.
+
+#include <xlog/common.h>
+#include <xlog/details/backtracer.h>
+#include <xlog/details/log_msg.h>
+
+#ifdef SPDLOG_WCHAR_TO_UTF8_SUPPORT
+#ifndef _WIN32
+#error SPDLOG_WCHAR_TO_UTF8_SUPPORT only supported on windows
+#endif
+#include <xlog/details/os.h>
+#endif
+
 #include <vector>
-#include <xlog/format.h>
 
-namespace xlog {
+#ifndef SPDLOG_NO_EXCEPTIONS
+#define SPDLOG_LOGGER_CATCH(location)                                                 \
+    catch (const std::exception &ex) {                                                \
+        if (location.filename) {                                                      \
+            err_handler_(fmt_lib::format(SPDLOG_FMT_STRING("{} [{}({})]"), ex.what(), \
+                                         location.filename, location.line));          \
+        } else {                                                                      \
+            err_handler_(ex.what());                                                  \
+        }                                                                             \
+    }                                                                                 \
+    catch (...) {                                                                     \
+        err_handler_("Rethrowing unknown exception in logger");                       \
+        throw;                                                                        \
+    }
+#else
+#define SPDLOG_LOGGER_CATCH(location)
+#endif
 
-    enum class LogLevel {
-        LEVEL_DEBUG,
-        LEVEL_INFO,
-        LEVEL_WARN,
-        LEVEL_ERROR,
-        LEVEL_FATAL,
-        LevelCount
-    };
+namespace spdlog {
 
-    struct LogMessage {
+class SPDLOG_API logger {
+public:
+    // Empty logger
+    explicit logger(std::string name)
+        : name_(std::move(name)),
+          sinks_() {}
 
-        std::vector<std::pair<std::string, std::string>> fields;
-        std::string message;
-        std::string indent;
-        LogLevel level;
+    // Logger with range on sinks
+    template <typename It>
+    logger(std::string name, It begin, It end)
+        : name_(std::move(name)),
+          sinks_(begin, end) {}
 
-        ~LogMessage();
+    // Logger with single sink
+    logger(std::string name, sink_ptr single_sink)
+        : logger(std::move(name), {std::move(single_sink)}) {}
 
-    LogMessage& Debug(std::string_view msg) {
-        message = msg;
-        level = LogLevel::LEVEL_DEBUG;
-        return *this;
+    // Logger with sinks init list
+    logger(std::string name, sinks_init_list sinks)
+        : logger(std::move(name), sinks.begin(), sinks.end()) {}
+
+    virtual ~logger() = default;
+
+    logger(const logger &other);
+    logger(logger &&other) SPDLOG_NOEXCEPT;
+    logger &operator=(logger other) SPDLOG_NOEXCEPT;
+    void swap(spdlog::logger &other) SPDLOG_NOEXCEPT;
+
+    template <typename... Args>
+    void log(source_loc loc, level::level_enum lvl, format_string_t<Args...> fmt, Args &&...args) {
+        log_(loc, lvl, details::to_string_view(fmt), std::forward<Args>(args)...);
     }
 
-    LogMessage& Info(std::string_view msg) {
-        message = msg;
-        level = LogLevel::LEVEL_INFO;
-        return *this;
+    template <typename... Args>
+    void log(level::level_enum lvl, format_string_t<Args...> fmt, Args &&...args) {
+        log(source_loc{}, lvl, fmt, std::forward<Args>(args)...);
     }
 
-    LogMessage& Warn(std::string_view msg) {
-        message = msg;
-        level = LogLevel::LEVEL_WARN;
-        return *this;
+    template <typename T>
+    void log(level::level_enum lvl, const T &msg) {
+        log(source_loc{}, lvl, msg);
     }
 
-    LogMessage& Error(std::string_view msg) {
-        message = msg;
-        level = LogLevel::LEVEL_ERROR;
-        return *this;
+    // T cannot be statically converted to format string (including string_view/wstring_view)
+    template <class T,
+              typename std::enable_if<!is_convertible_to_any_format_string<const T &>::value,
+                                      int>::type = 0>
+    void log(source_loc loc, level::level_enum lvl, const T &msg) {
+        log(loc, lvl, "{}", msg);
     }
 
-    LogMessage& Fatal(std::string_view msg) {
-        message = msg;
-        level = LogLevel::LEVEL_FATAL;
-        return *this;
-    }       
+    void log(log_clock::time_point log_time,
+             source_loc loc,
+             level::level_enum lvl,
+             string_view_t msg) {
+        bool log_enabled = should_log(lvl);
+        bool traceback_enabled = tracer_.enabled();
+        if (!log_enabled && !traceback_enabled) {
+            return;
+        }
 
-    LogMessage& WithField(std::string_view key, std::string_view value) {
-        fields.emplace_back(key, value);
-        return *this;
-    }       
-        
-    private:
-        void do_log();
-
-
-    };
-
-    constexpr std::array<std::string_view, static_cast<int>(xlog::LogLevel::LevelCount)> DefaultStrings = {
-        "⚙",  // Debug
-        "•",  // Info
-        "⚠",  // Warn
-        "⨯",  // Error
-        "◼",  // Fatal
-    };
-
-    constexpr std::array<std::string_view, static_cast<int>(xlog::LogLevel::LevelCount)> CheckStrings = {
-        "⚙",  // Debug
-        "✓",  // Info
-        "⚠",  // Warn
-        "⨯",  // Error
-        "◼",  // Fatal
-    };
-
-    constexpr std::array<std::string_view, static_cast<int>(xlog::LogLevel::LevelCount)> DefaultLevelStrings = {
-        "DEBUG",  // Debug
-        "INFO",  // Info
-        "WARN",  // Warn
-        "ERROR",  // Error
-        "FATAL",  // Fatal
-    };
-
-    constexpr std::array<std::string_view, static_cast<int>(xlog::LogLevel::LevelCount)> ShortLevelStrings = {
-        "D",  // Debug
-        "I",  // Info
-        "W",  // Warn
-        "E",  // Error
-        "F",  // Fatal
-    };
-
-
-    struct LogConfig {
-        LogConfig();
-        LevelFormater Format;
-        FILE *File{nullptr};
-        bool  LogLevelString{false};
-        std::array<std::string_view, static_cast<int>(xlog::LogLevel::LevelCount)> Icons{DefaultStrings};
-        std::array<std::string_view, static_cast<int>(xlog::LogLevel::LevelCount)> LevelString{DefaultLevelStrings};
-    };
-
-
-    void set_log_config(LogConfig conf);
-
-    void enable_log_level_string();
-
-    void disable_log_level_string();
-
-    const LogConfig&get_log_config();
-    
-
-    inline int level_index(LogLevel l) {
-        return static_cast<int>(l);
+        details::log_msg log_msg(log_time, loc, name_, lvl, msg);
+        log_it_(log_msg, log_enabled, traceback_enabled);
     }
 
+    void log(source_loc loc, level::level_enum lvl, string_view_t msg) {
+        bool log_enabled = should_log(lvl);
+        bool traceback_enabled = tracer_.enabled();
+        if (!log_enabled && !traceback_enabled) {
+            return;
+        }
 
-}  // namespace xlog
+        details::log_msg log_msg(loc, name_, lvl, msg);
+        log_it_(log_msg, log_enabled, traceback_enabled);
+    }
+
+    void log(level::level_enum lvl, string_view_t msg) { log(source_loc{}, lvl, msg); }
+
+    template <typename... Args>
+    void trace(format_string_t<Args...> fmt, Args &&...args) {
+        log(level::trace, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void debug(format_string_t<Args...> fmt, Args &&...args) {
+        log(level::debug, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void info(format_string_t<Args...> fmt, Args &&...args) {
+        log(level::info, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void warn(format_string_t<Args...> fmt, Args &&...args) {
+        log(level::warn, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void error(format_string_t<Args...> fmt, Args &&...args) {
+        log(level::err, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void critical(format_string_t<Args...> fmt, Args &&...args) {
+        log(level::critical, fmt, std::forward<Args>(args)...);
+    }
+
+#ifdef SPDLOG_WCHAR_TO_UTF8_SUPPORT
+    template <typename... Args>
+    void log(source_loc loc, level::level_enum lvl, wformat_string_t<Args...> fmt, Args &&...args) {
+        log_(loc, lvl, details::to_string_view(fmt), std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void log(level::level_enum lvl, wformat_string_t<Args...> fmt, Args &&...args) {
+        log(source_loc{}, lvl, fmt, std::forward<Args>(args)...);
+    }
+
+    void log(log_clock::time_point log_time,
+             source_loc loc,
+             level::level_enum lvl,
+             wstring_view_t msg) {
+        bool log_enabled = should_log(lvl);
+        bool traceback_enabled = tracer_.enabled();
+        if (!log_enabled && !traceback_enabled) {
+            return;
+        }
+
+        memory_buf_t buf;
+        details::os::wstr_to_utf8buf(wstring_view_t(msg.data(), msg.size()), buf);
+        details::log_msg log_msg(log_time, loc, name_, lvl, string_view_t(buf.data(), buf.size()));
+        log_it_(log_msg, log_enabled, traceback_enabled);
+    }
+
+    void log(source_loc loc, level::level_enum lvl, wstring_view_t msg) {
+        bool log_enabled = should_log(lvl);
+        bool traceback_enabled = tracer_.enabled();
+        if (!log_enabled && !traceback_enabled) {
+            return;
+        }
+
+        memory_buf_t buf;
+        details::os::wstr_to_utf8buf(wstring_view_t(msg.data(), msg.size()), buf);
+        details::log_msg log_msg(loc, name_, lvl, string_view_t(buf.data(), buf.size()));
+        log_it_(log_msg, log_enabled, traceback_enabled);
+    }
+
+    void log(level::level_enum lvl, wstring_view_t msg) { log(source_loc{}, lvl, msg); }
+
+    template <typename... Args>
+    void trace(wformat_string_t<Args...> fmt, Args &&...args) {
+        log(level::trace, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void debug(wformat_string_t<Args...> fmt, Args &&...args) {
+        log(level::debug, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void info(wformat_string_t<Args...> fmt, Args &&...args) {
+        log(level::info, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void warn(wformat_string_t<Args...> fmt, Args &&...args) {
+        log(level::warn, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void error(wformat_string_t<Args...> fmt, Args &&...args) {
+        log(level::err, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void critical(wformat_string_t<Args...> fmt, Args &&...args) {
+        log(level::critical, fmt, std::forward<Args>(args)...);
+    }
+#endif
+
+    template <typename T>
+    void trace(const T &msg) {
+        log(level::trace, msg);
+    }
+
+    template <typename T>
+    void debug(const T &msg) {
+        log(level::debug, msg);
+    }
+
+    template <typename T>
+    void info(const T &msg) {
+        log(level::info, msg);
+    }
+
+    template <typename T>
+    void warn(const T &msg) {
+        log(level::warn, msg);
+    }
+
+    template <typename T>
+    void error(const T &msg) {
+        log(level::err, msg);
+    }
+
+    template <typename T>
+    void critical(const T &msg) {
+        log(level::critical, msg);
+    }
+
+    // return true logging is enabled for the given level.
+    bool should_log(level::level_enum msg_level) const {
+        return msg_level >= level_.load(std::memory_order_relaxed);
+    }
+
+    // return true if backtrace logging is enabled.
+    bool should_backtrace() const { return tracer_.enabled(); }
+
+    void set_level(level::level_enum log_level);
+
+    level::level_enum level() const;
+
+    const std::string &name() const;
+
+    // set formatting for the sinks in this logger.
+    // each sink will get a separate instance of the formatter object.
+    void set_formatter(std::unique_ptr<formatter> f);
+
+    // set formatting for the sinks in this logger.
+    // equivalent to
+    //     set_formatter(make_unique<pattern_formatter>(pattern, time_type))
+    // Note: each sink will get a new instance of a formatter object, replacing the old one.
+    void set_pattern(std::string pattern, pattern_time_type time_type = pattern_time_type::local);
+
+    // backtrace support.
+    // efficiently store all debug/trace messages in a circular buffer until needed for debugging.
+    void enable_backtrace(size_t n_messages);
+    void disable_backtrace();
+    void dump_backtrace();
+
+    // flush functions
+    void flush();
+    void flush_on(level::level_enum log_level);
+    level::level_enum flush_level() const;
+
+    // sinks
+    const std::vector<sink_ptr> &sinks() const;
+
+    std::vector<sink_ptr> &sinks();
+
+    // error handler
+    void set_error_handler(err_handler);
+
+    // create new logger with same sinks and configuration.
+    virtual std::shared_ptr<logger> clone(std::string logger_name);
+
+protected:
+    std::string name_;
+    std::vector<sink_ptr> sinks_;
+    spdlog::level_t level_{level::info};
+    spdlog::level_t flush_level_{level::off};
+    err_handler custom_err_handler_{nullptr};
+    details::backtracer tracer_;
+
+    // common implementation for after templated public api has been resolved
+    template <typename... Args>
+    void log_(source_loc loc, level::level_enum lvl, string_view_t fmt, Args &&...args) {
+        bool log_enabled = should_log(lvl);
+        bool traceback_enabled = tracer_.enabled();
+        if (!log_enabled && !traceback_enabled) {
+            return;
+        }
+        SPDLOG_TRY {
+            memory_buf_t buf;
+#ifdef SPDLOG_USE_STD_FORMAT
+            fmt_lib::vformat_to(std::back_inserter(buf), fmt, fmt_lib::make_format_args(args...));
+#else
+            fmt::vformat_to(fmt::appender(buf), fmt, fmt::make_format_args(args...));
+#endif
+
+            details::log_msg log_msg(loc, name_, lvl, string_view_t(buf.data(), buf.size()));
+            log_it_(log_msg, log_enabled, traceback_enabled);
+        }
+        SPDLOG_LOGGER_CATCH(loc)
+    }
+
+#ifdef SPDLOG_WCHAR_TO_UTF8_SUPPORT
+    template <typename... Args>
+    void log_(source_loc loc, level::level_enum lvl, wstring_view_t fmt, Args &&...args) {
+        bool log_enabled = should_log(lvl);
+        bool traceback_enabled = tracer_.enabled();
+        if (!log_enabled && !traceback_enabled) {
+            return;
+        }
+        SPDLOG_TRY {
+            // format to wmemory_buffer and convert to utf8
+            wmemory_buf_t wbuf;
+            fmt_lib::vformat_to(std::back_inserter(wbuf), fmt,
+                                fmt_lib::make_format_args<fmt_lib::wformat_context>(args...));
+
+            memory_buf_t buf;
+            details::os::wstr_to_utf8buf(wstring_view_t(wbuf.data(), wbuf.size()), buf);
+            details::log_msg log_msg(loc, name_, lvl, string_view_t(buf.data(), buf.size()));
+            log_it_(log_msg, log_enabled, traceback_enabled);
+        }
+        SPDLOG_LOGGER_CATCH(loc)
+    }
+#endif  // SPDLOG_WCHAR_TO_UTF8_SUPPORT
+
+    // log the given message (if the given log level is high enough),
+    // and save backtrace (if backtrace is enabled).
+    void log_it_(const details::log_msg &log_msg, bool log_enabled, bool traceback_enabled);
+    virtual void sink_it_(const details::log_msg &msg);
+    virtual void flush_();
+    void dump_backtrace_();
+    bool should_flush_(const details::log_msg &msg) const;
+
+    // handle errors during logging.
+    // default handler prints the error to stderr at max rate of 1 message/sec.
+    void err_handler_(const std::string &msg) const;
+};
+
+void swap(logger &a, logger &b) noexcept;
+
+}  // namespace spdlog
+
+#ifdef SPDLOG_HEADER_ONLY
+#include "logger-inl.h"
+#endif
