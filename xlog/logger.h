@@ -27,6 +27,8 @@
 
 #include <vector>
 
+#include <xlog/fmt/bundled/printf.h>
+
 #ifndef XLOG_NO_EXCEPTIONS
 #define XLOG_LOGGER_CATCH(location)                                                 \
     catch (const std::exception &ex) {                                                \
@@ -78,6 +80,17 @@ public:
     template <typename... Args>
     void log(source_loc loc, level::level_enum lvl, format_string_t<Args...> fmt, Args &&...args) {
         log_(loc, lvl, details::to_string_view(fmt), std::forward<Args>(args)...);
+    }
+
+    // printf-style formatting (used by ZLOG macros)
+    template <typename... Args>
+    void log_printf(source_loc loc, level::level_enum lvl, const char *fmt, Args &&...args) {
+        log_printf_(loc, lvl, string_view_t(fmt), std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void log_printf(level::level_enum lvl, const char *fmt, Args &&...args) {
+        log_printf(source_loc{}, lvl, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
@@ -356,6 +369,26 @@ protected:
         XLOG_LOGGER_CATCH(loc)
     }
 #endif  // XLOG_WCHAR_TO_UTF8_SUPPORT
+
+    template <typename... Args>
+    void log_printf_(source_loc loc, level::level_enum lvl, string_view_t fmt, Args &&...args) {
+        bool log_enabled = should_log(lvl);
+        bool traceback_enabled = tracer_.enabled();
+        if (!log_enabled && !traceback_enabled) {
+            return;
+        }
+        XLOG_TRY {
+            std::string text;
+            if constexpr (sizeof...(Args) == 0) {
+                text.assign(fmt.data(), fmt.size());
+            } else {
+                text = fmt::sprintf(fmt, std::forward<Args>(args)...);
+            }
+            details::log_msg log_msg(loc, name_, lvl, string_view_t(text));
+            log_it_(log_msg, log_enabled, traceback_enabled);
+        }
+        XLOG_LOGGER_CATCH(loc)
+    }
 
     // log the given message (if the given log level is high enough),
     // and save backtrace (if backtrace is enabled).

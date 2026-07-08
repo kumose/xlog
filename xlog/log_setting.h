@@ -27,4 +27,16 @@ namespace xlog {
         static int vlog = 0;
         return vlog;
     }
+
+    // Returns true when verbose logging at the given level should be emitted.
+    // VLOG macros log at TRACE severity; both global log_level and vlog_level
+    // must permit the message.
+    inline bool vlog_is_on(int verbose_level) {
+        return log_level() <= XLOG_LEVEL_TRACE &&
+               verbose_level <= vlog_level();
+    }
 } // namespace xlog
+
+#define VXLOG_IS_ON(verbose_level) ::xlog::vlog_is_on(verbose_level)
+#define TVLOG_IS_ON(verbose_level) ::xlog::vlog_is_on(verbose_level)
+#define VZLOG_IS_ON(verbose_level) ::xlog::vlog_is_on(verbose_level)

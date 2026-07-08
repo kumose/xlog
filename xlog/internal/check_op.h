@@ -3,8 +3,12 @@
 #include <string>
 #include <type_traits>
 #include <cstring>
+#include <strings.h>
+#include <cstdlib>
 
 #include <xlog/common.h>
+#include <xlog/xlog.h>
+#include <xlog/fmt/bundled/printf.h>
 
 namespace xlog {
 namespace internal {
@@ -126,5 +130,65 @@ inline std::string *CheckstrcasecmpfalseImpl(const char *s1, const char *s2,
     return MakeStrCheckFailString(s1, s2, exprtext);
 }
 
+[[noreturn]] inline void CheckFail(const char *file, int line, const std::string &msg) {
+    ::xlog::default_logger_raw()->log(
+        ::xlog::source_loc{file, line, XLOG_FUNCTION},
+        ::xlog::level::critical,
+        ::xlog::string_view_t(msg));
+    ::std::abort();
+}
+
+inline void CheckFailFmtImpl(const char *file, int line, const char *cond) {
+    CheckFail(file, line, std::string("Check failed: ") + cond);
+}
+
+template <typename... Args>
+inline void CheckFailFmtImpl(const char *file, int line, const char *cond,
+                             format_string_t<Args...> fmt, Args &&...args) {
+    const std::string detail = fmt::format(fmt, std::forward<Args>(args)...);
+    CheckFail(file, line,
+              fmt::format(FMT_STRING("Check failed: {}: {}"), cond, detail));
+}
+
+inline void CheckFailPrintfImpl(const char *file, int line, const char *cond) {
+    CheckFail(file, line, std::string("Check failed: ") + cond);
+}
+
+inline void CheckFailPrintfImpl(const char *file, int line, const char *cond,
+                                const char *fmt) {
+    CheckFail(file, line, std::string("Check failed: ") + cond + ": " + fmt);
+}
+
+template <typename... Args>
+inline void CheckFailPrintfImpl(const char *file, int line, const char *cond,
+                                const char *fmt, Args &&...args) {
+    const std::string detail = fmt::sprintf(fmt, std::forward<Args>(args)...);
+    CheckFail(file, line,
+              std::string("Check failed: ") + cond + ": " + detail);
+}
+
+template <typename T>
+inline T CheckNotNull(const char *file, int line, const char *names, T &&t) {
+    if (t == nullptr) {
+        CheckFail(file, line, std::string("Check failed: ") + names);
+    }
+    return std::forward<T>(t);
+}
+
 } // namespace internal
 } // namespace xlog
+
+#define XLOG_INTERNAL_CHECK_OP_FAIL(name, op, val1, val2)                       \
+    while (auto _xcheck_op_result_ =                                            \
+               ::xlog::internal::name##Impl(                                    \
+                   ::xlog::internal::GetReferenceableValue(val1),               \
+                   ::xlog::internal::GetReferenceableValue(val2),               \
+                   #val1 " " #op " " #val2))                                    \
+        ::xlog::internal::CheckFail(__FILE__, __LINE__, *_xcheck_op_result_)
+
+#define XLOG_INTERNAL_CHECK_STROP(func, op, expected, s1, s2)                   \
+    while (auto _xcheck_strop_result_ =                                         \
+               ::xlog::internal::Check##func##expected##Impl(                   \
+                   (s1), (s2),                                                  \
+                   #s1 " " #op " " #s2))                                        \
+        ::xlog::internal::CheckFail(__FILE__, __LINE__, *_xcheck_strop_result_)

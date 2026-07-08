@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 
-#[[
 kmcmake_cc_binary(
         NAMESPACE ${PROJECT_NAME}
         NAME demo
@@ -23,8 +22,20 @@ kmcmake_cc_binary(
         CXXOPTS
         ${KMCMAKE_CXX_OPTIONS}
         LINKS
-        ${KMCMAKE_DEPS_LINK}
         ${PROJECT_NAME}::xlog
+        ${KMCMAKE_DEPS_LINK}
         PUBLIC
 )
-]]
+
+kmcmake_cc_binary(
+        NAMESPACE ${PROJECT_NAME}
+        NAME demo_1
+        SOURCES
+        demo_1.cc
+        CXXOPTS
+        ${KMCMAKE_CXX_OPTIONS}
+        LINKS
+        ${PROJECT_NAME}::xlog
+        ${KMCMAKE_DEPS_LINK}
+        PUBLIC
+)

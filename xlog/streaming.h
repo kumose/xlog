@@ -164,9 +164,6 @@ private:
 #define XLOG_INTERNAL_LOG_CHECK_ERROR   (::xlog::log_level() <= XLOG_LEVEL_ERROR)
 #define XLOG_INTERNAL_LOG_CHECK_FATAL   (::xlog::log_level() <= XLOG_LEVEL_FATAL)
 
-#define XLOG_INTERNAL_CHECK_FATAL(msg) \
-    ::xlog::internal::XlogStreamBuf(__FILE__, __LINE__, xlog::level::critical, msg, true)
-
 #define XLOG_INTERNAL_LOG_LEVEL(unused) \
     ::xlog::internal::XlogStreamBuf(__FILE__, __LINE__, _xlog_severity_, \
                                     _xlog_severity_ == xlog::level::critical)
@@ -241,6 +238,51 @@ private:
     XLOG_INTERNAL_CONDITION##severity(STATEFUL, (condition) && XLOG_INTERNAL_LOG_CHECK##severity)(EveryNSec, n_seconds) \
     XLOG_INTERNAL_LOG##severity.internal_stream()
 
+// PLOG — stream bodies append errno via with_perror()
+#define XLOG_INTERNAL_PLOG_IMPL(severity) \
+    XLOG_INTERNAL_CONDITION##severity(STATELESS, XLOG_INTERNAL_LOG_CHECK##severity) \
+    XLOG_INTERNAL_LOG##severity.internal_stream().with_perror()
+
+#define XLOG_INTERNAL_PLOG_IF_IMPL(severity, condition) \
+    XLOG_INTERNAL_CONDITION##severity(STATELESS, (condition) && XLOG_INTERNAL_LOG_CHECK##severity) \
+    XLOG_INTERNAL_LOG##severity.internal_stream().with_perror()
+
+#define XLOG_INTERNAL_PLOG_EVERY_N_IMPL(severity, n) \
+    XLOG_INTERNAL_CONDITION##severity(STATEFUL, XLOG_INTERNAL_LOG_CHECK##severity)(EveryN, n) \
+    XLOG_INTERNAL_LOG##severity.internal_stream().with_perror()
+
+#define XLOG_INTERNAL_PLOG_FIRST_N_IMPL(severity, n) \
+    XLOG_INTERNAL_CONDITION##severity(STATEFUL, XLOG_INTERNAL_LOG_CHECK##severity)(FirstN, n) \
+    XLOG_INTERNAL_LOG##severity.internal_stream().with_perror()
+
+#define XLOG_INTERNAL_PLOG_EVERY_POW_2_IMPL(severity) \
+    XLOG_INTERNAL_CONDITION##severity(STATEFUL, XLOG_INTERNAL_LOG_CHECK##severity)(EveryPow2) \
+    XLOG_INTERNAL_LOG##severity.internal_stream().with_perror()
+
+#define XLOG_INTERNAL_PLOG_EVERY_N_SEC_IMPL(severity, n_seconds) \
+    XLOG_INTERNAL_CONDITION##severity(STATEFUL, XLOG_INTERNAL_LOG_CHECK##severity)(EveryNSec, n_seconds) \
+    XLOG_INTERNAL_LOG##severity.internal_stream().with_perror()
+
+#define XLOG_INTERNAL_PLOG_IF_EVERY_N_IMPL(severity, condition, n) \
+    XLOG_INTERNAL_CONDITION##severity(STATEFUL, (condition) && XLOG_INTERNAL_LOG_CHECK##severity)(EveryN, n) \
+    XLOG_INTERNAL_LOG##severity.internal_stream().with_perror()
+
+#define XLOG_INTERNAL_PLOG_IF_FIRST_N_IMPL(severity, condition, n) \
+    XLOG_INTERNAL_CONDITION##severity(STATEFUL, (condition) && XLOG_INTERNAL_LOG_CHECK##severity)(FirstN, n) \
+    XLOG_INTERNAL_LOG##severity.internal_stream().with_perror()
+
+#define XLOG_INTERNAL_PLOG_IF_EVERY_POW_2_IMPL(severity, condition) \
+    XLOG_INTERNAL_CONDITION##severity(STATEFUL, (condition) && XLOG_INTERNAL_LOG_CHECK##severity)(EveryPow2) \
+    XLOG_INTERNAL_LOG##severity.internal_stream().with_perror()
+
+#define XLOG_INTERNAL_PLOG_IF_EVERY_N_SEC_IMPL(severity, condition, n_seconds) \
+    XLOG_INTERNAL_CONDITION##severity(STATEFUL, (condition) && XLOG_INTERNAL_LOG_CHECK##severity)(EveryNSec, n_seconds) \
+    XLOG_INTERNAL_LOG##severity.internal_stream().with_perror()
+
+// Release debug strip: bare NullStream absorbs << at zero runtime cost.
+#define XLOG_INTERNAL_NULL_STREAM() \
+    ::xlog::internal::NullStream().internal_stream()
+
 // ============================================================================
 // Public API — XLOG family
 // ============================================================================
@@ -294,6 +336,69 @@ private:
     XLOG_INTERNAL_LOG_IF_EVERY_N_SEC_IMPL(_##severity, condition, 60)
 
 // ============================================================================
+// XLOG_LEVEL — runtime-evaluated severity (stream)
+// ============================================================================
+
+#define XLOG_LEVEL(severity) \
+    for (int _xlog_sev_loop_ = 1; _xlog_sev_loop_; _xlog_sev_loop_ = 0) \
+        for (const xlog::level::level_enum _xlog_severity_ = (severity); \
+             _xlog_sev_loop_; _xlog_sev_loop_ = 0) \
+            if (::xlog::log_level() <= static_cast<int>(_xlog_severity_)) \
+                XLOG_INTERNAL_LOG_LEVEL(_).internal_stream()
+
+// ============================================================================
+// XPLOG — perror-appending stream logging (PKLOG equivalent)
+// ============================================================================
+
+#define XPLOG(severity) \
+    XLOG_INTERNAL_PLOG_IMPL(_##severity)
+
+#define XPLOG_IF(severity, condition) \
+    XLOG_INTERNAL_PLOG_IF_IMPL(_##severity, condition)
+
+#define XPLOG_EVERY_N(severity, n) \
+    XLOG_INTERNAL_PLOG_EVERY_N_IMPL(_##severity, n)
+
+#define XPLOG_FIRST_N(severity, n) \
+    XLOG_INTERNAL_PLOG_FIRST_N_IMPL(_##severity, n)
+
+#define XPLOG_ONCE(severity) \
+    XLOG_INTERNAL_PLOG_FIRST_N_IMPL(_##severity, 1)
+
+#define XPLOG_EVERY_POW_2(severity) \
+    XLOG_INTERNAL_PLOG_EVERY_POW_2_IMPL(_##severity)
+
+#define XPLOG_EVERY_N_SEC(severity, n_seconds) \
+    XLOG_INTERNAL_PLOG_EVERY_N_SEC_IMPL(_##severity, n_seconds)
+
+#define XPLOG_EVERY_SEC(severity) \
+    XLOG_INTERNAL_PLOG_EVERY_N_SEC_IMPL(_##severity, 1)
+
+#define XPLOG_EVERY_MIN(severity) \
+    XLOG_INTERNAL_PLOG_EVERY_N_SEC_IMPL(_##severity, 60)
+
+#define XPLOG_IF_EVERY_N(severity, condition, n) \
+    XLOG_INTERNAL_PLOG_IF_EVERY_N_IMPL(_##severity, condition, n)
+
+#define XPLOG_IF_FIRST_N(severity, condition, n) \
+    XLOG_INTERNAL_PLOG_IF_FIRST_N_IMPL(_##severity, condition, n)
+
+#define XPLOG_IF_ONCE(severity, condition) \
+    XLOG_INTERNAL_PLOG_IF_FIRST_N_IMPL(_##severity, condition, 1)
+
+#define XPLOG_IF_EVERY_POW_2(severity, condition) \
+    XLOG_INTERNAL_PLOG_IF_EVERY_POW_2_IMPL(_##severity, condition)
+
+#define XPLOG_IF_EVERY_N_SEC(severity, condition, n_seconds) \
+    XLOG_INTERNAL_PLOG_IF_EVERY_N_SEC_IMPL(_##severity, condition, n_seconds)
+
+#define XPLOG_IF_EVERY_SEC(severity, condition) \
+    XLOG_INTERNAL_PLOG_IF_EVERY_N_SEC_IMPL(_##severity, condition, 1)
+
+#define XPLOG_IF_EVERY_MIN(severity, condition) \
+    XLOG_INTERNAL_PLOG_IF_EVERY_N_SEC_IMPL(_##severity, condition, 60)
+
+// ============================================================================
 // VXLOG / DVXLOG — verbose logging
 // ============================================================================
 
@@ -301,25 +406,25 @@ private:
     switch (const int _xlog_verbose_level_ = (verbose_level))                   \
     case 0:                                                                    \
     default:                                                                   \
-        XLOG_IF(INFO, ::xlog::internal::VLogIsOn(_xlog_verbose_level_))         \
+        XLOG_IF(TRACE, ::xlog::vlog_is_on(_xlog_verbose_level_))               \
             .with_verbosity(_xlog_verbose_level_)
 
 #define VXLOG_EVERY_N(verbose_level, n)                                         \
     switch (const int _xlog_verbose_level_ = (verbose_level))                   \
     case 0:                                                                    \
     default:                                                                   \
-        XLOG_INTERNAL_CONDITION_INFO(                                           \
-            STATEFUL, ::xlog::internal::VLogIsOn(_xlog_verbose_level_))         \
-        (EveryN, n) XLOG_INTERNAL_LOG_INFO.internal_stream()                    \
+        XLOG_INTERNAL_CONDITION_TRACE(                                          \
+            STATEFUL, ::xlog::vlog_is_on(_xlog_verbose_level_))                 \
+        (EveryN, n) XLOG_INTERNAL_LOG_TRACE.internal_stream()                   \
             .with_verbosity(_xlog_verbose_level_)
 
 #define VXLOG_FIRST_N(verbose_level, n)                                         \
     switch (const int _xlog_verbose_level_ = (verbose_level))                   \
     case 0:                                                                    \
     default:                                                                   \
-        XLOG_INTERNAL_CONDITION_INFO(                                           \
-            STATEFUL, ::xlog::internal::VLogIsOn(_xlog_verbose_level_))         \
-        (FirstN, n) XLOG_INTERNAL_LOG_INFO.internal_stream()                    \
+        XLOG_INTERNAL_CONDITION_TRACE(                                          \
+            STATEFUL, ::xlog::vlog_is_on(_xlog_verbose_level_))                 \
+        (FirstN, n) XLOG_INTERNAL_LOG_TRACE.internal_stream()                   \
             .with_verbosity(_xlog_verbose_level_)
 
 #define VXLOG_ONCE(verbose_level) VXLOG_FIRST_N(verbose_level, 1)
@@ -328,32 +433,22 @@ private:
     switch (const int _xlog_verbose_level_ = (verbose_level))                   \
     case 0:                                                                    \
     default:                                                                   \
-        XLOG_INTERNAL_CONDITION_INFO(                                           \
-            STATEFUL, ::xlog::internal::VLogIsOn(_xlog_verbose_level_))         \
-        (EveryPow2) XLOG_INTERNAL_LOG_INFO.internal_stream()                    \
+        XLOG_INTERNAL_CONDITION_TRACE(                                          \
+            STATEFUL, ::xlog::vlog_is_on(_xlog_verbose_level_))                 \
+        (EveryPow2) XLOG_INTERNAL_LOG_TRACE.internal_stream()                   \
             .with_verbosity(_xlog_verbose_level_)
 
 #define VXLOG_EVERY_N_SEC(verbose_level, n_seconds)                             \
     switch (const int _xlog_verbose_level_ = (verbose_level))                   \
     case 0:                                                                    \
     default:                                                                   \
-        XLOG_INTERNAL_CONDITION_INFO(                                           \
-            STATEFUL, ::xlog::internal::VLogIsOn(_xlog_verbose_level_))         \
-        (EveryNSec, n_seconds) XLOG_INTERNAL_LOG_INFO.internal_stream()         \
+        XLOG_INTERNAL_CONDITION_TRACE(                                          \
+            STATEFUL, ::xlog::vlog_is_on(_xlog_verbose_level_))                 \
+        (EveryNSec, n_seconds) XLOG_INTERNAL_LOG_TRACE.internal_stream()        \
             .with_verbosity(_xlog_verbose_level_)
 
 #define VXLOG_EVERY_SEC(verbose_level) VXLOG_EVERY_N_SEC(verbose_level, 1)
 #define VXLOG_EVERY_MIN(verbose_level) VXLOG_EVERY_N_SEC(verbose_level, 60)
-
-namespace xlog {
-namespace internal {
-
-inline bool VLogIsOn(int verbose_level) {
-    return verbose_level <= vlog_level();
-}
-
-} // namespace internal
-} // namespace xlog
 
 // ============================================================================
 // DXLOG / DVXLOG — debug-only variants
@@ -378,6 +473,23 @@ inline bool VLogIsOn(int verbose_level) {
 #define DXLOG_IF_EVERY_SEC(severity, cond) XLOG_IF_EVERY_SEC(severity, cond)
 #define DXLOG_IF_EVERY_MIN(severity, cond) XLOG_IF_EVERY_MIN(severity, cond)
 
+#define DXPLOG(severity) XPLOG(severity)
+#define DXPLOG_IF(severity, condition) XPLOG_IF(severity, condition)
+#define DXPLOG_EVERY_N(severity, n) XPLOG_EVERY_N(severity, n)
+#define DXPLOG_FIRST_N(severity, n) XPLOG_FIRST_N(severity, n)
+#define DXPLOG_ONCE(severity) XPLOG_ONCE(severity)
+#define DXPLOG_EVERY_POW_2(severity) XPLOG_EVERY_POW_2(severity)
+#define DXPLOG_EVERY_N_SEC(severity, n_seconds) XPLOG_EVERY_N_SEC(severity, n_seconds)
+#define DXPLOG_EVERY_SEC(severity) XPLOG_EVERY_SEC(severity)
+#define DXPLOG_EVERY_MIN(severity) XPLOG_EVERY_MIN(severity)
+#define DXPLOG_IF_EVERY_N(severity, cond, n) XPLOG_IF_EVERY_N(severity, cond, n)
+#define DXPLOG_IF_FIRST_N(severity, cond, n) XPLOG_IF_FIRST_N(severity, cond, n)
+#define DXPLOG_IF_ONCE(severity, cond) XPLOG_IF_ONCE(severity, cond)
+#define DXPLOG_IF_EVERY_POW_2(severity, cond) XPLOG_IF_EVERY_POW_2(severity, cond)
+#define DXPLOG_IF_EVERY_N_SEC(severity, cond, s) XPLOG_IF_EVERY_N_SEC(severity, cond, s)
+#define DXPLOG_IF_EVERY_SEC(severity, cond) XPLOG_IF_EVERY_SEC(severity, cond)
+#define DXPLOG_IF_EVERY_MIN(severity, cond) XPLOG_IF_EVERY_MIN(severity, cond)
+
 #define DVXLOG(verbose_level) VXLOG(verbose_level)
 #define DVXLOG_EVERY_N(v, n) VXLOG_EVERY_N(v, n)
 #define DVXLOG_FIRST_N(v, n) VXLOG_FIRST_N(v, n)
@@ -389,161 +501,154 @@ inline bool VLogIsOn(int verbose_level) {
 
 #else // NDEBUG
 
-#define DXLOG(severity) \
-    XLOG_INTERNAL_CONDITION_INFO(STATELESS, false) \
-    XLOG_INTERNAL_LOG_INFO.internal_stream()
-#define DXLOG_IF(severity, condition) \
-    XLOG_INTERNAL_CONDITION_INFO(STATELESS, false && (condition)) \
-    XLOG_INTERNAL_LOG_INFO.internal_stream()
-#define DXLOG_EVERY_N(severity, n) \
-    XLOG_INTERNAL_CONDITION_INFO(STATEFUL, false)(EveryN, n) \
-    XLOG_INTERNAL_LOG_INFO.internal_stream()
-#define DXLOG_FIRST_N(severity, n) \
-    XLOG_INTERNAL_CONDITION_INFO(STATEFUL, false)(FirstN, n) \
-    XLOG_INTERNAL_LOG_INFO.internal_stream()
-#define DXLOG_ONCE(severity) DXLOG_FIRST_N(severity, 1)
-#define DXLOG_EVERY_POW_2(severity) \
-    XLOG_INTERNAL_CONDITION_INFO(STATEFUL, false)(EveryPow2) \
-    XLOG_INTERNAL_LOG_INFO.internal_stream()
-#define DXLOG_EVERY_N_SEC(severity, n_seconds) \
-    XLOG_INTERNAL_CONDITION_INFO(STATEFUL, false)(EveryNSec, n_seconds) \
-    XLOG_INTERNAL_LOG_INFO.internal_stream()
-#define DXLOG_EVERY_SEC(severity) DXLOG_EVERY_N_SEC(severity, 1)
-#define DXLOG_EVERY_MIN(severity) DXLOG_EVERY_N_SEC(severity, 60)
-#define DXLOG_IF_EVERY_N(severity, cond, n) \
-    XLOG_INTERNAL_CONDITION_INFO(STATEFUL, false && (cond))(EveryN, n) \
-    XLOG_INTERNAL_LOG_INFO.internal_stream()
-#define DXLOG_IF_FIRST_N(severity, cond, n) \
-    XLOG_INTERNAL_CONDITION_INFO(STATEFUL, false && (cond))(FirstN, n) \
-    XLOG_INTERNAL_LOG_INFO.internal_stream()
-#define DXLOG_IF_ONCE(severity, cond) DXLOG_IF_FIRST_N(severity, cond, 1)
-#define DXLOG_IF_EVERY_POW_2(severity, cond) \
-    XLOG_INTERNAL_CONDITION_INFO(STATEFUL, false && (cond))(EveryPow2) \
-    XLOG_INTERNAL_LOG_INFO.internal_stream()
-#define DXLOG_IF_EVERY_N_SEC(severity, cond, s) \
-    XLOG_INTERNAL_CONDITION_INFO(STATEFUL, false && (cond))(EveryNSec, s) \
-    XLOG_INTERNAL_LOG_INFO.internal_stream()
-#define DXLOG_IF_EVERY_SEC(severity, cond) DXLOG_IF_EVERY_N_SEC(severity, cond, 1)
-#define DXLOG_IF_EVERY_MIN(severity, cond) DXLOG_IF_EVERY_N_SEC(severity, cond, 60)
+#define DXLOG(severity)                         XLOG_INTERNAL_NULL_STREAM()
+#define DXLOG_IF(severity, condition)           ((void)(condition), XLOG_INTERNAL_NULL_STREAM())
+#define DXLOG_EVERY_N(severity, n)              ((void)(n), XLOG_INTERNAL_NULL_STREAM())
+#define DXLOG_FIRST_N(severity, n)              ((void)(n), XLOG_INTERNAL_NULL_STREAM())
+#define DXLOG_ONCE(severity)                    XLOG_INTERNAL_NULL_STREAM()
+#define DXLOG_EVERY_POW_2(severity)             XLOG_INTERNAL_NULL_STREAM()
+#define DXLOG_EVERY_N_SEC(severity, n_seconds)   ((void)(n_seconds), XLOG_INTERNAL_NULL_STREAM())
+#define DXLOG_EVERY_SEC(severity)                 XLOG_INTERNAL_NULL_STREAM()
+#define DXLOG_EVERY_MIN(severity)                 XLOG_INTERNAL_NULL_STREAM()
+#define DXLOG_IF_EVERY_N(severity, cond, n)     ((void)(cond), (void)(n), XLOG_INTERNAL_NULL_STREAM())
+#define DXLOG_IF_FIRST_N(severity, cond, n)     ((void)(cond), (void)(n), XLOG_INTERNAL_NULL_STREAM())
+#define DXLOG_IF_ONCE(severity, cond)           ((void)(cond), XLOG_INTERNAL_NULL_STREAM())
+#define DXLOG_IF_EVERY_POW_2(severity, cond)    ((void)(cond), XLOG_INTERNAL_NULL_STREAM())
+#define DXLOG_IF_EVERY_N_SEC(severity, cond, s) ((void)(cond), (void)(s), XLOG_INTERNAL_NULL_STREAM())
+#define DXLOG_IF_EVERY_SEC(severity, cond)      ((void)(cond), XLOG_INTERNAL_NULL_STREAM())
+#define DXLOG_IF_EVERY_MIN(severity, cond)      ((void)(cond), XLOG_INTERNAL_NULL_STREAM())
 
-#define DVXLOG(verbose_level)                                                   \
-    switch (const int _xlog_verbose_level_ = (verbose_level))                   \
-    case 0:                                                                    \
-    default:                                                                   \
-        XLOG_IF(INFO, false && ::xlog::internal::VLogIsOn(_xlog_verbose_level_)) \
-            .with_verbosity(_xlog_verbose_level_)
+#define DXPLOG(severity)                         XLOG_INTERNAL_NULL_STREAM()
+#define DXPLOG_IF(severity, condition)           ((void)(condition), XLOG_INTERNAL_NULL_STREAM())
+#define DXPLOG_EVERY_N(severity, n)              ((void)(n), XLOG_INTERNAL_NULL_STREAM())
+#define DXPLOG_FIRST_N(severity, n)              ((void)(n), XLOG_INTERNAL_NULL_STREAM())
+#define DXPLOG_ONCE(severity)                    XLOG_INTERNAL_NULL_STREAM()
+#define DXPLOG_EVERY_POW_2(severity)             XLOG_INTERNAL_NULL_STREAM()
+#define DXPLOG_EVERY_N_SEC(severity, n_seconds)   ((void)(n_seconds), XLOG_INTERNAL_NULL_STREAM())
+#define DXPLOG_EVERY_SEC(severity)                 XLOG_INTERNAL_NULL_STREAM()
+#define DXPLOG_EVERY_MIN(severity)                 XLOG_INTERNAL_NULL_STREAM()
+#define DXPLOG_IF_EVERY_N(severity, cond, n)     ((void)(cond), (void)(n), XLOG_INTERNAL_NULL_STREAM())
+#define DXPLOG_IF_FIRST_N(severity, cond, n)     ((void)(cond), (void)(n), XLOG_INTERNAL_NULL_STREAM())
+#define DXPLOG_IF_ONCE(severity, cond)           ((void)(cond), XLOG_INTERNAL_NULL_STREAM())
+#define DXPLOG_IF_EVERY_POW_2(severity, cond)    ((void)(cond), XLOG_INTERNAL_NULL_STREAM())
+#define DXPLOG_IF_EVERY_N_SEC(severity, cond, s) ((void)(cond), (void)(s), XLOG_INTERNAL_NULL_STREAM())
+#define DXPLOG_IF_EVERY_SEC(severity, cond)      ((void)(cond), XLOG_INTERNAL_NULL_STREAM())
+#define DXPLOG_IF_EVERY_MIN(severity, cond)      ((void)(cond), XLOG_INTERNAL_NULL_STREAM())
 
-#define DVXLOG_EVERY_N(verbose_level, n)                                        \
-    switch (const int _xlog_verbose_level_ = (verbose_level))                   \
-    case 0:                                                                    \
-    default:                                                                   \
-        XLOG_INTERNAL_CONDITION_INFO(                                           \
-            STATEFUL, false && ::xlog::internal::VLogIsOn(_xlog_verbose_level_)) \
-        (EveryN, n) XLOG_INTERNAL_LOG_INFO.internal_stream()                    \
-            .with_verbosity(_xlog_verbose_level_)
-
-#define DVXLOG_FIRST_N(verbose_level, n)                                        \
-    switch (const int _xlog_verbose_level_ = (verbose_level))                   \
-    case 0:                                                                    \
-    default:                                                                   \
-        XLOG_INTERNAL_CONDITION_INFO(                                           \
-            STATEFUL, false && ::xlog::internal::VLogIsOn(_xlog_verbose_level_)) \
-        (FirstN, n) XLOG_INTERNAL_LOG_INFO.internal_stream()                    \
-            .with_verbosity(_xlog_verbose_level_)
-
-#define DVXLOG_ONCE(verbose_level) DVXLOG_FIRST_N(verbose_level, 1)
-#define DVXLOG_EVERY_POW_2(verbose_level)                                       \
-    switch (const int _xlog_verbose_level_ = (verbose_level))                   \
-    case 0:                                                                    \
-    default:                                                                   \
-        XLOG_INTERNAL_CONDITION_INFO(                                           \
-            STATEFUL, false && ::xlog::internal::VLogIsOn(_xlog_verbose_level_)) \
-        (EveryPow2) XLOG_INTERNAL_LOG_INFO.internal_stream()                    \
-            .with_verbosity(_xlog_verbose_level_)
-
-#define DVXLOG_EVERY_N_SEC(verbose_level, n_seconds)                            \
-    switch (const int _xlog_verbose_level_ = (verbose_level))                   \
-    case 0:                                                                    \
-    default:                                                                   \
-        XLOG_INTERNAL_CONDITION_INFO(                                           \
-            STATEFUL, false && ::xlog::internal::VLogIsOn(_xlog_verbose_level_)) \
-        (EveryNSec, n_seconds) XLOG_INTERNAL_LOG_INFO.internal_stream()         \
-            .with_verbosity(_xlog_verbose_level_)
-
-#define DVXLOG_EVERY_SEC(verbose_level) DVXLOG_EVERY_N_SEC(verbose_level, 1)
-#define DVXLOG_EVERY_MIN(verbose_level) DVXLOG_EVERY_N_SEC(verbose_level, 60)
+#define DVXLOG(v)                                 ((void)(v), XLOG_INTERNAL_NULL_STREAM())
+#define DVXLOG_EVERY_N(v, n)                      ((void)(v), (void)(n), XLOG_INTERNAL_NULL_STREAM())
+#define DVXLOG_FIRST_N(v, n)                      ((void)(v), (void)(n), XLOG_INTERNAL_NULL_STREAM())
+#define DVXLOG_ONCE(v)                            ((void)(v), XLOG_INTERNAL_NULL_STREAM())
+#define DVXLOG_EVERY_POW_2(v)                     ((void)(v), XLOG_INTERNAL_NULL_STREAM())
+#define DVXLOG_EVERY_N_SEC(v, s)                   ((void)(v), (void)(s), XLOG_INTERNAL_NULL_STREAM())
+#define DVXLOG_EVERY_SEC(v)                        ((void)(v), XLOG_INTERNAL_NULL_STREAM())
+#define DVXLOG_EVERY_MIN(v)                        ((void)(v), XLOG_INTERNAL_NULL_STREAM())
 
 #endif // NDEBUG
 
 // ============================================================================
-// CHECK family
+// XCHECK — stream-style CHECK family
 // ============================================================================
-
-#define XCHECK(condition)                                                       \
-    XLOG_INTERNAL_CONDITION_FATAL(STATELESS, !(condition))                      \
-    XLOG_INTERNAL_CHECK_X().internal_stream()
-
-#define XCHECK_ERR(invocation)                                                  \
-    XLOG_INTERNAL_LOG_IF_IMPL(_FATAL, (invocation) == -1)                       \
-        .with_perror()
-
-#define XCHECK_NOTNULL(val)                                                     \
-    ::xlog::internal::CheckNotNull(__FILE__, __LINE__,                          \
-        "'" #val "' Must be non nullptr", (val))
 
 #define XLOG_INTERNAL_CHECK_X()                                                 \
     ::xlog::internal::XlogStreamBuf(__FILE__, __LINE__,                         \
-        xlog::level::critical, "Check failed: ")
-
-#define XCHECK_EQ(val1, val2)                                                   \
-    XLOG_INTERNAL_CHECK_OP_IMPL(XCHECK_EQ, ==, val1, val2)
-
-#define XCHECK_NE(val1, val2)                                                   \
-    XLOG_INTERNAL_CHECK_OP_IMPL(XCHECK_NE, !=, val1, val2)
-
-#define XCHECK_LE(val1, val2)                                                   \
-    XLOG_INTERNAL_CHECK_OP_IMPL(XCHECK_LE, <=, val1, val2)
-
-#define XCHECK_LT(val1, val2)                                                   \
-    XLOG_INTERNAL_CHECK_OP_IMPL(XCHECK_LT, <, val1, val2)
-
-#define XCHECK_GE(val1, val2)                                                   \
-    XLOG_INTERNAL_CHECK_OP_IMPL(XCHECK_GE, >=, val1, val2)
-
-#define XCHECK_GT(val1, val2)                                                   \
-    XLOG_INTERNAL_CHECK_OP_IMPL(XCHECK_GT, >, val1, val2)
-
-#define XLOG_INTERNAL_CHECK_OP_IMPL(name, op, val1, val2)                       \
-    while (auto _xcheck_op_result_ =                                            \
-               ::xlog::internal::name##Impl(                                    \
-                   ::xlog::internal::GetReferenceableValue(val1),               \
-                   ::xlog::internal::GetReferenceableValue(val2),               \
-                   #val1 " " #op " " #val2))                                    \
-        XLOG_INTERNAL_CONDITION_FATAL(STATELESS, true)                           \
-    XLOG_INTERNAL_CHECK_OP_FATAL(*_xcheck_op_result_).internal_stream()
+        xlog::level::critical, "Check failed: ", true)
 
 #define XLOG_INTERNAL_CHECK_OP_FATAL(msg)                                       \
     ::xlog::internal::XlogStreamBuf(__FILE__, __LINE__,                         \
         xlog::level::critical, msg, true)
 
+#define XCHECK(condition)                                                       \
+    XLOG_INTERNAL_CONDITION_FATAL(STATELESS, !(condition))                      \
+    XLOG_INTERNAL_CHECK_X().internal_stream()
+
+#define XCHECK_ERR(invocation) \
+    XPLOG_IF(FATAL, (invocation) == -1) << #invocation
+
+#define XCHECK_NOTNULL(val)                                                     \
+    ::xlog::internal::CheckNotNull(__FILE__, __LINE__,                          \
+        "'" #val "' Must be non nullptr", (val))
+
+#define XCHECK_EQ(val1, val2)                                                   \
+    while (auto _xcheck_op_result_ =                                            \
+               ::xlog::internal::Check_EQImpl(                                  \
+                   ::xlog::internal::GetReferenceableValue(val1),               \
+                   ::xlog::internal::GetReferenceableValue(val2),               \
+                   #val1 " == " #val2))                                         \
+        XLOG_INTERNAL_CONDITION_FATAL(STATELESS, true)                          \
+    XLOG_INTERNAL_CHECK_OP_FATAL(*_xcheck_op_result_).internal_stream()
+
+#define XCHECK_NE(val1, val2)                                                   \
+    while (auto _xcheck_op_result_ =                                            \
+               ::xlog::internal::Check_NEImpl(                                  \
+                   ::xlog::internal::GetReferenceableValue(val1),               \
+                   ::xlog::internal::GetReferenceableValue(val2),               \
+                   #val1 " != " #val2))                                         \
+        XLOG_INTERNAL_CONDITION_FATAL(STATELESS, true)                          \
+    XLOG_INTERNAL_CHECK_OP_FATAL(*_xcheck_op_result_).internal_stream()
+
+#define XCHECK_LE(val1, val2)                                                   \
+    while (auto _xcheck_op_result_ =                                            \
+               ::xlog::internal::Check_LEImpl(                                  \
+                   ::xlog::internal::GetReferenceableValue(val1),               \
+                   ::xlog::internal::GetReferenceableValue(val2),               \
+                   #val1 " <= " #val2))                                         \
+        XLOG_INTERNAL_CONDITION_FATAL(STATELESS, true)                          \
+    XLOG_INTERNAL_CHECK_OP_FATAL(*_xcheck_op_result_).internal_stream()
+
+#define XCHECK_LT(val1, val2)                                                   \
+    while (auto _xcheck_op_result_ =                                            \
+               ::xlog::internal::Check_LTImpl(                                  \
+                   ::xlog::internal::GetReferenceableValue(val1),               \
+                   ::xlog::internal::GetReferenceableValue(val2),               \
+                   #val1 " < " #val2))                                          \
+        XLOG_INTERNAL_CONDITION_FATAL(STATELESS, true)                          \
+    XLOG_INTERNAL_CHECK_OP_FATAL(*_xcheck_op_result_).internal_stream()
+
+#define XCHECK_GE(val1, val2)                                                   \
+    while (auto _xcheck_op_result_ =                                            \
+               ::xlog::internal::Check_GEImpl(                                  \
+                   ::xlog::internal::GetReferenceableValue(val1),               \
+                   ::xlog::internal::GetReferenceableValue(val2),               \
+                   #val1 " >= " #val2))                                         \
+        XLOG_INTERNAL_CONDITION_FATAL(STATELESS, true)                          \
+    XLOG_INTERNAL_CHECK_OP_FATAL(*_xcheck_op_result_).internal_stream()
+
+#define XCHECK_GT(val1, val2)                                                   \
+    while (auto _xcheck_op_result_ =                                            \
+               ::xlog::internal::Check_GTImpl(                                  \
+                   ::xlog::internal::GetReferenceableValue(val1),               \
+                   ::xlog::internal::GetReferenceableValue(val2),               \
+                   #val1 " > " #val2))                                          \
+        XLOG_INTERNAL_CONDITION_FATAL(STATELESS, true)                          \
+    XLOG_INTERNAL_CHECK_OP_FATAL(*_xcheck_op_result_).internal_stream()
+
 #define XCHECK_STREQ(s1, s2)                                                    \
-    XLOG_INTERNAL_CHECK_STROP(strcmp, ==, true,  s1, s2)
+    while (auto _xcheck_strop_result_ =                                         \
+               ::xlog::internal::CheckstrcmptrueImpl(                           \
+                   (s1), (s2), #s1 " == " #s2))                                  \
+        XLOG_INTERNAL_CONDITION_FATAL(STATELESS, true)                          \
+    XLOG_INTERNAL_CHECK_OP_FATAL(*_xcheck_strop_result_).internal_stream()
 
 #define XCHECK_STRNE(s1, s2)                                                    \
-    XLOG_INTERNAL_CHECK_STROP(strcmp, !=, false, s1, s2)
+    while (auto _xcheck_strop_result_ =                                         \
+               ::xlog::internal::CheckstrcmpfalseImpl(                           \
+                   (s1), (s2), #s1 " != " #s2))                                  \
+        XLOG_INTERNAL_CONDITION_FATAL(STATELESS, true)                          \
+    XLOG_INTERNAL_CHECK_OP_FATAL(*_xcheck_strop_result_).internal_stream()
 
 #define XCHECK_STRCASEEQ(s1, s2)                                                \
-    XLOG_INTERNAL_CHECK_STROP(strcasecmp, ==, true,  s1, s2)
+    while (auto _xcheck_strop_result_ =                                         \
+               ::xlog::internal::CheckstrcasecmptrueImpl(                       \
+                   (s1), (s2), #s1 " == " #s2))                                  \
+        XLOG_INTERNAL_CONDITION_FATAL(STATELESS, true)                          \
+    XLOG_INTERNAL_CHECK_OP_FATAL(*_xcheck_strop_result_).internal_stream()
 
 #define XCHECK_STRCASENE(s1, s2)                                                \
-    XLOG_INTERNAL_CHECK_STROP(strcasecmp, !=, false, s1, s2)
-
-#define XLOG_INTERNAL_CHECK_STROP(func, op, expected, s1, s2)                   \
     while (auto _xcheck_strop_result_ =                                         \
-               ::xlog::internal::Check##func##expected##Impl(                   \
-                   (s1), (s2),                                                  \
-                   #s1 " " #op " " #s2))                                        \
-        XLOG_INTERNAL_CONDITION_FATAL(STATELESS, true)                           \
+               ::xlog::internal::CheckstrcasecmpfalseImpl(                      \
+                   (s1), (s2), #s1 " != " #s2))                                  \
+        XLOG_INTERNAL_CONDITION_FATAL(STATELESS, true)                          \
     XLOG_INTERNAL_CHECK_OP_FATAL(*_xcheck_strop_result_).internal_stream()
 
 #ifndef NDEBUG
@@ -559,37 +664,25 @@ inline bool VLogIsOn(int verbose_level) {
 #define DXCHECK_STRNE(s1, s2) XCHECK_STRNE(s1, s2)
 #define DXCHECK_STRCASEEQ(s1, s2) XCHECK_STRCASEEQ(s1, s2)
 #define DXCHECK_STRCASENE(s1, s2) XCHECK_STRCASENE(s1, s2)
+#define DXCHECK_ERR(invocation) XCHECK_ERR(invocation)
+#define DXCHECK_NOTNULL(val) XCHECK_NOTNULL(val)
 
 #else // NDEBUG
 
-#define DXCHECK(cond) while (false && (cond)) XLOG_INTERNAL_LOG_FATAL.internal_stream()
-#define DXCHECK_EQ(v1, v2) DXCHECK_NOP(v1, v2)
-#define DXCHECK_NE(v1, v2) DXCHECK_NOP(v1, v2)
-#define DXCHECK_LE(v1, v2) DXCHECK_NOP(v1, v2)
-#define DXCHECK_LT(v1, v2) DXCHECK_NOP(v1, v2)
-#define DXCHECK_GE(v1, v2) DXCHECK_NOP(v1, v2)
-#define DXCHECK_GT(v1, v2) DXCHECK_NOP(v1, v2)
-#define DXCHECK_STREQ(s1, s2) DXCHECK_NOP(s1, s2)
-#define DXCHECK_STRNE(s1, s2) DXCHECK_NOP(s1, s2)
-#define DXCHECK_STRCASEEQ(s1, s2) DXCHECK_NOP(s1, s2)
-#define DXCHECK_STRCASENE(s1, s2) DXCHECK_NOP(s1, s2)
-
-#define DXCHECK_NOP(x, y)                                                       \
-    while (false && ((void)(x), (void)(y), 0))                                  \
-    ::xlog::internal::NullStream().internal_stream()
+#define DXCHECK(cond)                        ((void)0)
+#define DXCHECK_EQ(v1, v2)                   ((void)(v1), (void)(v2), (void)0)
+#define DXCHECK_NE(v1, v2)                   ((void)(v1), (void)(v2), (void)0)
+#define DXCHECK_LE(v1, v2)                   ((void)(v1), (void)(v2), (void)0)
+#define DXCHECK_LT(v1, v2)                   ((void)(v1), (void)(v2), (void)0)
+#define DXCHECK_GE(v1, v2)                   ((void)(v1), (void)(v2), (void)0)
+#define DXCHECK_GT(v1, v2)                   ((void)(v1), (void)(v2), (void)0)
+#define DXCHECK_STREQ(s1, s2)                ((void)(s1), (void)(s2), (void)0)
+#define DXCHECK_STRNE(s1, s2)                ((void)(s1), (void)(s2), (void)0)
+#define DXCHECK_STRCASEEQ(s1, s2)            ((void)(s1), (void)(s2), (void)0)
+#define DXCHECK_STRCASENE(s1, s2)            ((void)(s1), (void)(s2), (void)0)
+#define DXCHECK_ERR(invocation)              ((void)(invocation), (void)0)
+#define DXCHECK_NOTNULL(val)                 (val)
 
 #endif // NDEBUG
 
 #define UNREACHABLE() XCHECK(false)
-
-template <typename T>
-inline T CheckNotNull(const char *file, int line, const char *names, T &&t) {
-    if (t == nullptr) {
-        XlogStreamBuf(file, line, xlog::level::critical,
-                      std::string("Check failed: ") + names, true);
-    }
-    return std::forward<T>(t);
-}
-
-} // namespace internal
-} // namespace xlog

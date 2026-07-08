@@ -7,8 +7,8 @@ TEST_CASE("systemd", "[all]") {
     logger.set_level(xlog::level::trace);
     logger.trace("test spdlog trace");
     logger.debug("test spdlog debug");
-    XLOG_LOGGER_INFO((&logger), "test spdlog info");
-    XLOG_LOGGER_WARN((&logger), "test spdlog warn");
-    XLOG_LOGGER_ERROR((&logger), "test spdlog error");
-    XLOG_LOGGER_CRITICAL((&logger), "test spdlog critical");
+    logger.info("test spdlog info");
+    logger.warn("test spdlog warn");
+    logger.error("test spdlog error");
+    logger.critical("test spdlog critical");
 }

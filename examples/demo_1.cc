@@ -1,48 +1,23 @@
-// Copyright (C) Kumo inc. and its affiliates.
-// Author: Jeff.li lijippy@163.com
-// All rights reserved.
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published
-// by the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2026 Kumo inc. and its affiliates. All Rights Reserved.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//
-
+// Minimal xlog setup: default console logger + runtime log_level / vlog_level.
 
 #include <xlog/xlog.h>
-#include <fmt/core.h>
+#include <xlog/logging.h>
+#include <xlog/log_setting.h>
 
 int main() {
-    using namespace xlog;
+    // Default logger is stdout_color_mt; set runtime verbosity.
+    xlog::log_level() = XLOG_LEVEL_INFO;
+    xlog::vlog_level() = 1;
 
-    // Simple debug
-    xlogger.Debug("Starting the process");
+    XLOG(INFO) << "hello from XLOG(INFO)";
+    TLOG(INFO, "hello from TLOG(INFO, \"{}\")", "fmt");
+    ZLOG(INFO, "hello from ZLOG(INFO, \"%s\")", "printf");
 
-    xlogger.Info("Loading configuration");
+    TVLOG(1, "verbose fmt when vlog_level >= 1");
+    TVLOG(2, "should not print when vlog_level is 1");
 
-    // Warning with a field
-    xlogger.Warn("Configuration deprecated")
-           .WithField("file", "config.yaml")
-           ;
-
-    // Error with multi-line message
-    xlogger.Error(
-        "Failed to load module\nCheck the logs for details"
-    ).WithField("module", "network")
-     ;
-
-    xlogger.Fatal("Fatal error encountered");
-
-    // Using formatted message
-    int count = 5;
-    xlogger.Infof("Processed {} files successfully", count);
-
+    xlog::shutdown();
     return 0;
 }

@@ -128,8 +128,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
-// Uncomment and set to compile time level with zero cost (default is INFO).
-// Macros like XLOG_DEBUG(..), XLOG_INFO(..)  will expand to empty statements if not enabled
+// Default compile-time floor (see common.h). Runtime filtering uses log_level()
+// and TLOG/XLOG/ZLOG(severity, ...) / XLOG(severity) << ... style macros.
 //
 // #define XLOG_ACTIVE_LEVEL XLOG_LEVEL_INFO
 ///////////////////////////////////////////////////////////////////////////////

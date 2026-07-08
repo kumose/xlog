@@ -16,4 +16,5 @@
 #pragma once
 
 #include <xlog/tlog.h>
+#include <xlog/zlog.h>
 #include <xlog/streaming.h>
