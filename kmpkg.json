@@ -1,5 +1,8 @@
 {
   "dependencies": [
-    "benchmark"
+    "benchmark",
+    "glog",
+    "turbo",
+    "abseil"
   ]
 }
