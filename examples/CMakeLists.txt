@@ -40,88 +40,9 @@ kmcmake_cc_binary(
         PUBLIC
 )
 
-find_package(turbo REQUIRED)
-find_package(glog REQUIRED)
-find_package(absl REQUIRED CONFIG)
-
-set(XLOG_ABSL_USED_TARGETS
-        absl::absl_check
-        absl::absl_log
-        absl::algorithm
-        absl::base
-        absl::bind_front
-        absl::bits
-        absl::btree
-        absl::cleanup
-        absl::cord
-        absl::core_headers
-        absl::debugging
-        absl::die_if_null
-        absl::dynamic_annotations
-        absl::flags
-        absl::flat_hash_map
-        absl::flat_hash_set
-        absl::function_ref
-        absl::hash
-        absl::layout
-        absl::log_initialize
-        absl::log_severity
-        absl::memory
-        absl::node_hash_map
-        absl::node_hash_set
-        absl::optional
-        absl::span
-        absl::status
-        absl::statusor
-        absl::strings
-        absl::synchronization
-        absl::time
-        absl::type_traits
-        absl::utility
-        absl::variant
-)
-
-
-kmcmake_cc_binary(
-        NAMESPACE ${PROJECT_NAME}
-        NAME demo_upstream_turbo
-        SOURCES
-        demo_upstream_turbo.cc
-        CXXOPTS
-        ${KMCMAKE_CXX_OPTIONS}
-        LINKS
-        turbo::turbo_static
-        glog::glog
-        ${XLOG_ABSL_USED_TARGETS}
-        ${PROJECT_NAME}::xlog
-        ${KMCMAKE_SYSTEM_DYLINK}
-        PUBLIC
-)
-
-kmcmake_cc_binary(
-        NAMESPACE ${PROJECT_NAME}
-        NAME demo_upstream_glog
-        SOURCES
-        demo_upstream_glog.cc
-        CXXOPTS
-        ${KMCMAKE_CXX_OPTIONS}
-        LINKS
-        ${PROJECT_NAME}::xlog
-        glog::glog
-        ${KMCMAKE_SYSTEM_DYLINK}
-        PUBLIC
-)
-
-kmcmake_cc_binary(
-        NAMESPACE ${PROJECT_NAME}
-        NAME demo_upstream_absl
-        SOURCES
-        demo_upstream_absl.cc
-        CXXOPTS
-        ${KMCMAKE_CXX_OPTIONS}
-        LINKS
-        ${PROJECT_NAME}::xlog
-        ${XLOG_ABSL_USED_TARGETS}
-        ${KMCMAKE_SYSTEM_DYLINK}
-        PUBLIC
-)
+# Upstream demos (turbo/glog/absl) require external packages not currently available.
+# Re-enable by installing the dependencies and uncommenting the section below.
+# find_package(turbo QUIET)
+# find_package(glog QUIET)
+# find_package(absl QUIET CONFIG)
+# ... (upstream demo targets follow)

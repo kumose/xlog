@@ -1,6 +1,4 @@
 # Copyright (C) Kumo inc. and its affiliates.
-# Author: Jeff.li lijippy@163.com
-# All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -94,17 +92,6 @@ ENDMACRO()
 
 MACRO(kmcmake_raw Value)
     message("${Value}")
-ENDMACRO()
-
-MACRO(kmcmake_directory_list result curdir)
-    FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
-    SET(dirlist "")
-    FOREACH (child ${children})
-        IF (IS_DIRECTORY ${curdir}/${child})
-            LIST(APPEND dirlist ${child})
-        ENDIF ()
-    ENDFOREACH ()
-    SET(${result} ${dirlist})
 ENDMACRO()
 
 MACRO(kmcmake_print_list result)

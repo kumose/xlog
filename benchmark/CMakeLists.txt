@@ -35,7 +35,7 @@ kmcmake_cc_binary(
         PUBLIC
 )
 
-kmcmake_cc_bm(
+kmcmake_cc_benchmark(
         NAME latency
         MODULE ${PROJECT_NAME}
         SOURCES latency.cc
@@ -43,7 +43,7 @@ kmcmake_cc_bm(
         LINKS ${PROJECT_NAME}::xlog benchmark::benchmark ${KMCMAKE_DEPS_LINK}
 )
 
-kmcmake_cc_bm(
+kmcmake_cc_benchmark(
         NAME formatter_bench
         MODULE ${PROJECT_NAME}
         SOURCES formatter-bench.cc

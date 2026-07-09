@@ -1,6 +1,4 @@
 # Copyright (C) Kumo inc. and its affiliates.
-# Author: Jeff.li lijippy@163.com
-# All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,10 +18,12 @@
 # kmcmake_cc_benchmark
 ################################################################################################
 
-function(kmcmake_cc_bm)
+function(kmcmake_cc_benchmark)
     set(options
             DISABLED
+            SKIP
             EXT
+            EXCLUDE_SYSTEM
     )
     set(args NAME
             MODULE
@@ -49,7 +49,7 @@ function(kmcmake_cc_bm)
     )
 
     if (NOT KMCMAKE_CC_BM_MODULE)
-        kmcmake_error("no module name to the bm")
+        kmcmake_error("no module name to the benchmark")
     endif ()
 
     kmcmake_raw("-----------------------------------")
@@ -64,11 +64,16 @@ function(kmcmake_cc_bm)
         message("-----------------------------------")
     endif ()
     set(${KMCMAKE_CC_BM_NAME}_INCLUDE_SYSTEM SYSTEM)
-    if (KMCMAKE_CC_LIB_EXCLUDE_SYSTEM)
+    if (KMCMAKE_CC_BM_EXCLUDE_SYSTEM)
         set(${KMCMAKE_CC_BM_NAME}_INCLUDE_SYSTEM "")
     endif ()
 
+    set(KMCMAKE_BUILD_THIS_TEST ON)
     set(KMCMAKE_RUN_THIS_TEST ON)
+    if (KMCMAKE_CC_BM_DISABLED)
+        set(KMCMAKE_BUILD_THIS_TEST OFF)
+        set(KMCMAKE_RUN_THIS_TEST OFF)
+    endif ()
     if (KMCMAKE_CC_BM_SKIP)
         set(KMCMAKE_RUN_THIS_TEST OFF)
     endif ()
@@ -78,6 +83,10 @@ function(kmcmake_cc_bm)
     set(testcase ${KMCMAKE_CC_BM_MODULE}_${KMCMAKE_CC_BM_NAME})
     if (${KMCMAKE_CC_BM_MODULE} IN_LIST ${PROJECT_NAME}_SKIP_BENCHMARK)
         set(KMCMAKE_RUN_THIS_TEST OFF)
+    endif ()
+
+    if (NOT KMCMAKE_BUILD_THIS_TEST)
+        return()
     endif ()
 
     add_executable(${testcase} ${KMCMAKE_CC_BM_SOURCES})
@@ -112,7 +121,7 @@ function(kmcmake_cc_bm)
 
 endfunction()
 
-function(kmcmake_cc_bm_ext)
+function(kmcmake_cc_benchmark_ext)
     set(options
             DISABLE
     )
