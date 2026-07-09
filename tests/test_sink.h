@@ -12,6 +12,7 @@
 #include <chrono>
 #include <mutex>
 #include <thread>
+#include <vector>
 
 namespace xlog {
 namespace sinks {

@@ -1,6 +1,4 @@
 # Copyright (C) Kumo inc. and its affiliates.
-# Author: Jeff.li lijippy@163.com
-# All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,26 +15,44 @@
 ############################################################
 # system pthread and rt, dl
 ############################################################
+set(KMCMAKE_CONFIG_PRIVATE_FIND_SNIPPETS "")
+
+# Record a private find_package(...) call for generated <Project>Config.cmake.
+# Usage:
+#   kmcmake_private_find_package(ZLIB REQUIRED)
+function(kmcmake_private_find_package)
+    string(JOIN " " _KMCMAKE_PRIVATE_FIND_PACKAGE_ARGS ${ARGV})
+    string(APPEND KMCMAKE_CONFIG_PRIVATE_FIND_SNIPPETS
+            "find_dependency(${_KMCMAKE_PRIVATE_FIND_PACKAGE_ARGS})\n")
+    set(KMCMAKE_CONFIG_PRIVATE_FIND_SNIPPETS "${KMCMAKE_CONFIG_PRIVATE_FIND_SNIPPETS}" PARENT_SCOPE)
+endfunction()
+
+# Record a private find_library(...) call for generated <Project>Config.cmake.
+# Usage:
+#   kmcmake_private_find_library(MYLIB NAMES mylib PATHS /opt/mylib/lib)
+function(kmcmake_private_find_library)
+    string(JOIN " " _KMCMAKE_PRIVATE_FIND_LIBRARY_ARGS ${ARGV})
+    string(APPEND KMCMAKE_CONFIG_PRIVATE_FIND_SNIPPETS
+            "find_library(${_KMCMAKE_PRIVATE_FIND_LIBRARY_ARGS})\n")
+    set(KMCMAKE_CONFIG_PRIVATE_FIND_SNIPPETS "${KMCMAKE_CONFIG_PRIVATE_FIND_SNIPPETS}" PARENT_SCOPE)
+endfunction()
+
 set(KMCMAKE_SYSTEM_DYLINK)
 if (APPLE)
     find_library(CoreFoundation CoreFoundation)
-    list(APPEND KMCMAKE_SYSTEM_DYLINK ${CoreFoundation} pthread)
-elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    list(APPEND KMCMAKE_SYSTEM_DYLINK rt dl pthread)
+    list(APPEND KMCMAKE_SYSTEM_DYLINK ${CoreFoundation})
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    list(APPEND KMCMAKE_SYSTEM_DYLINK rt dl)
 endif ()
 
 if (KMCMAKE_BUILD_TEST)
     enable_testing()
-    #include(require_gtest)
-    #include(require_gmock)
-    #include(require_doctest)
 endif (KMCMAKE_BUILD_TEST)
 
-if (KMCMAKE_BUILD_BENCHMARK)
-    #include(require_benchmark)
-endif ()
-
 find_package(Threads REQUIRED)
+kmcmake_private_find_package(Threads REQUIRED)
+list(APPEND KMCMAKE_SYSTEM_DYLINK Threads::Threads)
+
 ############################################################
 #
 # add you libs to the KMCMAKE_DEPS_LINK variable eg as turbo
@@ -53,5 +69,3 @@ kmcmake_print_list_label("Denpendcies:" KMCMAKE_DEPS_LINK)
 # for binary
 ############################################################
 set(KMCMAKE_STATIC_BIN_OPTION -static-libgcc -static-libstdc++)
-
-

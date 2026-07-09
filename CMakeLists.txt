@@ -1,6 +1,4 @@
 # Copyright (C) Kumo inc. and its affiliates.
-# Author: Jeff.li lijippy@163.com
-# All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +17,7 @@
 # https://github.com/kumose/kmcmake
 ####################################################################################
 
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.31)
 
 project(xlog CXX)
 
@@ -44,10 +42,11 @@ set(${PROJECT_NAME}_VERSION ${PROJECT_VERSION})
 string(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UP)
 
 option(PYTHON_EXTENSION "kmcmake set build shared library or not" OFF)
-set(KMCMAKE_VERSION 0.6.0)
+set(KMCMAKE_VERSION 1.2.0)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/kmcmake)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/kmcmake/tools)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/kmcmake/arch)
 ##################################################################
 # add this for ${PROJECT_NAME} 's cmake include
 ##################################################################
@@ -63,10 +62,12 @@ include(kmcmake_module)
 # your cmake directory ${PROJECT_SOURCE_DIR}/cmake, do things here
 #################################################################
 
+# User custom options/hooks (optional). Loaded first so overrides apply
+# to deps/cxx/test config includes below.
+include(xlog_user_option OPTIONAL)
 
 include(xlog_deps)
 include(xlog_cxx_config)
-include(xlog_test)
 
 string(TOUPPER ${CMAKE_BUILD_TYPE} UPPERCASE_BUILD_TYPE)
 configure_file(${PROJECT_SOURCE_DIR}/xlog/version.h.in ${PROJECT_SOURCE_DIR}/xlog/version.h @ONLY)
@@ -132,19 +133,12 @@ if(NOT PYTHON_EXTENSION)
             INSTALL_DESTINATION "${config_install_dir}"
     )
 
-    #Targets:
-    #  * <prefix>/${CMAKE_INSTALL_LIBDIR}/libbar.a
-    #  * <prefix>/${CMAKE_INSTALL_LIBDIR}/libbaz.a
-    #  * header location after install: <prefix>/include/foo/Bar.hpp
-    #  * headers can be included by C++ code `#include <foo/Bar.hpp>`
-
-
     # Config
     #   * <prefix>/${CMAKE_INSTALL_LIBDIR}/cmake/Foo/FooConfig.cmake
     #   * <prefix>/${CMAKE_INSTALL_LIBDIR}/cmake/Foo/FooConfigVersion.cmake
     install(
             FILES
-            "${project_config}" "${version_config}"
+            "${project_config}" "${version_config}" "cmake/xlog_user_option.cmake"
             DESTINATION
             "${config_install_dir}"
     )
@@ -164,7 +158,6 @@ if(NOT PYTHON_EXTENSION)
             ${PROJECT_BINARY_DIR}/package/${PROJECT_NAME}.pc)
 
     install(FILES ${PROJECT_BINARY_DIR}/package/${PROJECT_NAME}.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
-    #include(xlog_cpack_config)
 endif()
 kmcmake_print("xlog cmake build system is created by kmcmake package manager tools")
 kmcmake_print("kmcmake: https://github.com/kumose/kmcmake")

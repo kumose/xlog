@@ -1,6 +1,4 @@
 # Copyright (C) Kumo inc. and its affiliates.
-# Author: Jeff.li lijippy@163.com
-# All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,6 +56,7 @@
 function(kmcmake_cc_object)
     set(options
             EXCLUDE_SYSTEM
+            UNITY
     )
     set(args NAME
             NAMESPACE
@@ -120,6 +119,12 @@ function(kmcmake_cc_object)
         kmcmake_raw("-----------------------------------")
     endif ()
     add_library(${KMCMAKE_CC_OBJECT_NAME} OBJECT ${KMCMAKE_CC_OBJECT_SOURCES} ${KMCMAKE_CC_OBJECT_HEADERS})
+    if (KMCMAKE_CC_OBJECT_UNITY)
+        set_target_properties(${KMCMAKE_CC_OBJECT_NAME} PROPERTIES
+                UNITY_BUILD ON
+                UNITY_BUILD_BATCH_SIZE 20
+        )
+    endif ()
     if (KMCMAKE_CC_OBJECT_DEPS)
         add_dependencies(${KMCMAKE_CC_OBJECT_NAME} ${KMCMAKE_CC_OBJECT_DEPS})
     endif ()
