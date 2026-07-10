@@ -41,6 +41,6 @@ jobs:
       - name: Configure
         run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DKMCMAKE_BUILD_TEST=ON
       - name: Build
-        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS
+        run: cmake --build build --config Debug -j $env:NUMBER_OF_PROCESSORS
       - name: Test
-        run: ctest --test-dir build --output-on-failure -j1
+        run: ctest --test-dir build -C Debug --output-on-failure -j1
