@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DKMCMAKE_BUILD_TEST=ON -DCMAKE_CXX_FLAGS="/utf-8"
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DKMCMAKE_BUILD_TEST=ON
       - name: Build
         run: cmake --build build -j $env:NUMBER_OF_PROCESSORS
       - name: Test
