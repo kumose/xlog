@@ -3,8 +3,12 @@
 #include <string>
 #include <type_traits>
 #include <cstring>
-#include <strings.h>
 #include <cstdlib>
+
+#ifdef _WIN32
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
+#endif
 
 #include <xlog/common.h>
 #include <xlog/xlog.h>
