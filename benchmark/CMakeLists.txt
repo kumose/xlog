@@ -49,4 +49,5 @@ kmcmake_cc_benchmark(
         SOURCES formatter-bench.cc
         CXXOPTS ${KMCMAKE_CXX_OPTIONS}
         LINKS ${PROJECT_NAME}::xlog benchmark::benchmark ${KMCMAKE_DEPS_LINK}
+        SKIP
 )

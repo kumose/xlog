@@ -22,7 +22,7 @@ set(KMCMAKE_CXX_OPTIONS
     ${KMCMAKE_RANDEN_FLAGS}
 )
 if(MSVC)
-    list(APPEND KMCMAKE_CXX_OPTIONS "/utf-8" "/Zc:preprocessor")
+    list(APPEND KMCMAKE_CXX_OPTIONS "/utf-8")
 endif()
 list(REMOVE_DUPLICATES KMCMAKE_CXX_OPTIONS)
 kmcmake_print_list_label("CXX_OPTIONS:" KMCMAKE_CXX_OPTIONS)

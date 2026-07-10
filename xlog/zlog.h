@@ -33,32 +33,32 @@
 #define ZLOG_BODY_TRACE(fmt, ...) \
     ::xlog::default_logger_raw()->log_printf( \
         ::xlog::source_loc{__FILE__, __LINE__, XLOG_FUNCTION}, \
-        ::xlog::level::trace, fmt __VA_OPT__(,) __VA_ARGS__)
+        ::xlog::level::trace, fmt , ##__VA_ARGS__)
 
 #define ZLOG_BODY_DEBUG(fmt, ...) \
     ::xlog::default_logger_raw()->log_printf( \
         ::xlog::source_loc{__FILE__, __LINE__, XLOG_FUNCTION}, \
-        ::xlog::level::debug, fmt __VA_OPT__(,) __VA_ARGS__)
+        ::xlog::level::debug, fmt , ##__VA_ARGS__)
 
 #define ZLOG_BODY_INFO(fmt, ...) \
     ::xlog::default_logger_raw()->log_printf( \
         ::xlog::source_loc{__FILE__, __LINE__, XLOG_FUNCTION}, \
-        ::xlog::level::info, fmt __VA_OPT__(,) __VA_ARGS__)
+        ::xlog::level::info, fmt , ##__VA_ARGS__)
 
 #define ZLOG_BODY_WARNING(fmt, ...) \
     ::xlog::default_logger_raw()->log_printf( \
         ::xlog::source_loc{__FILE__, __LINE__, XLOG_FUNCTION}, \
-        ::xlog::level::warn, fmt __VA_OPT__(,) __VA_ARGS__)
+        ::xlog::level::warn, fmt , ##__VA_ARGS__)
 
 #define ZLOG_BODY_ERROR(fmt, ...) \
     ::xlog::default_logger_raw()->log_printf( \
         ::xlog::source_loc{__FILE__, __LINE__, XLOG_FUNCTION}, \
-        ::xlog::level::err, fmt __VA_OPT__(,) __VA_ARGS__)
+        ::xlog::level::err, fmt , ##__VA_ARGS__)
 
 #define ZLOG_BODY_FATAL(fmt, ...) \
     (::xlog::default_logger_raw()->log_printf( \
          ::xlog::source_loc{__FILE__, __LINE__, XLOG_FUNCTION}, \
-         ::xlog::level::critical, fmt __VA_OPT__(,) __VA_ARGS__)), \
+         ::xlog::level::critical, fmt , ##__VA_ARGS__)), \
      ::std::abort())
 
 // ============================================================================
@@ -67,11 +67,11 @@
 
 #define ZLOG(severity, fmt, ...) \
     if (::xlog::log_level() <= XLOG_LEVEL_##severity) \
-        ZLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+        ZLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZLOG_IF(severity, condition, fmt, ...) \
     if (::xlog::log_level() <= XLOG_LEVEL_##severity && (condition)) \
-        ZLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+        ZLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 // ============================================================================
 // Rate-limited variants
@@ -83,7 +83,7 @@
         for (static ::xlog::internal::LogEveryNState _zlog_state_; \
              _zlog_enabled_ && _zlog_state_.ShouldLog(n); \
              _zlog_enabled_ = false) \
-            ZLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZLOG_FIRST_N(severity, n, fmt, ...) \
     for (bool _zlog_enabled_ = ::xlog::log_level() <= XLOG_LEVEL_##severity; \
@@ -91,10 +91,10 @@
         for (static ::xlog::internal::LogFirstNState _zlog_state_; \
              _zlog_enabled_ && _zlog_state_.ShouldLog(n); \
              _zlog_enabled_ = false) \
-            ZLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZLOG_ONCE(severity, fmt, ...) \
-    ZLOG_FIRST_N(severity, 1, fmt __VA_OPT__(,) __VA_ARGS__)
+    ZLOG_FIRST_N(severity, 1, fmt , ##__VA_ARGS__)
 
 #define ZLOG_EVERY_POW_2(severity, fmt, ...) \
     for (bool _zlog_enabled_ = ::xlog::log_level() <= XLOG_LEVEL_##severity; \
@@ -102,7 +102,7 @@
         for (static ::xlog::internal::LogEveryPow2State _zlog_state_; \
              _zlog_enabled_ && _zlog_state_.ShouldLog(); \
              _zlog_enabled_ = false) \
-            ZLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZLOG_EVERY_N_SEC(severity, n_seconds, fmt, ...) \
     for (bool _zlog_enabled_ = ::xlog::log_level() <= XLOG_LEVEL_##severity; \
@@ -110,13 +110,13 @@
         for (static ::xlog::internal::LogEveryNSecState _zlog_state_; \
              _zlog_enabled_ && _zlog_state_.ShouldLog(n_seconds); \
              _zlog_enabled_ = false) \
-            ZLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZLOG_EVERY_SEC(severity, fmt, ...) \
-    ZLOG_EVERY_N_SEC(severity, 1, fmt __VA_OPT__(,) __VA_ARGS__)
+    ZLOG_EVERY_N_SEC(severity, 1, fmt , ##__VA_ARGS__)
 
 #define ZLOG_EVERY_MIN(severity, fmt, ...) \
-    ZLOG_EVERY_N_SEC(severity, 60, fmt __VA_OPT__(,) __VA_ARGS__)
+    ZLOG_EVERY_N_SEC(severity, 60, fmt , ##__VA_ARGS__)
 
 // ============================================================================
 // Conditional rate-limited variants
@@ -128,7 +128,7 @@
         for (static ::xlog::internal::LogEveryNState _zlog_state_; \
              _zlog_enabled_ && _zlog_state_.ShouldLog(n); \
              _zlog_enabled_ = false) \
-            ZLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZLOG_IF_FIRST_N(severity, condition, n, fmt, ...) \
     for (bool _zlog_enabled_ = ::xlog::log_level() <= XLOG_LEVEL_##severity && (condition); \
@@ -136,10 +136,10 @@
         for (static ::xlog::internal::LogFirstNState _zlog_state_; \
              _zlog_enabled_ && _zlog_state_.ShouldLog(n); \
              _zlog_enabled_ = false) \
-            ZLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZLOG_IF_ONCE(severity, condition, fmt, ...) \
-    ZLOG_IF_FIRST_N(severity, condition, 1, fmt __VA_OPT__(,) __VA_ARGS__)
+    ZLOG_IF_FIRST_N(severity, condition, 1, fmt , ##__VA_ARGS__)
 
 #define ZLOG_IF_EVERY_POW_2(severity, condition, fmt, ...) \
     for (bool _zlog_enabled_ = ::xlog::log_level() <= XLOG_LEVEL_##severity && (condition); \
@@ -147,7 +147,7 @@
         for (static ::xlog::internal::LogEveryPow2State _zlog_state_; \
              _zlog_enabled_ && _zlog_state_.ShouldLog(); \
              _zlog_enabled_ = false) \
-            ZLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZLOG_IF_EVERY_N_SEC(severity, condition, n_seconds, fmt, ...) \
     for (bool _zlog_enabled_ = ::xlog::log_level() <= XLOG_LEVEL_##severity && (condition); \
@@ -155,13 +155,13 @@
         for (static ::xlog::internal::LogEveryNSecState _zlog_state_; \
              _zlog_enabled_ && _zlog_state_.ShouldLog(n_seconds); \
              _zlog_enabled_ = false) \
-            ZLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZLOG_IF_EVERY_SEC(severity, condition, fmt, ...) \
-    ZLOG_IF_EVERY_N_SEC(severity, condition, 1, fmt __VA_OPT__(,) __VA_ARGS__)
+    ZLOG_IF_EVERY_N_SEC(severity, condition, 1, fmt , ##__VA_ARGS__)
 
 #define ZLOG_IF_EVERY_MIN(severity, condition, fmt, ...) \
-    ZLOG_IF_EVERY_N_SEC(severity, condition, 60, fmt __VA_OPT__(,) __VA_ARGS__)
+    ZLOG_IF_EVERY_N_SEC(severity, condition, 60, fmt , ##__VA_ARGS__)
 
 // ============================================================================
 // ZPLOG — printf-style logging with errno appended (PKLOG equivalent)
@@ -170,42 +170,42 @@
 #define ZPLOG_BODY_TRACE(fmt, ...) \
     ::xlog::default_logger_raw()->log_printf( \
         ::xlog::source_loc{__FILE__, __LINE__, XLOG_FUNCTION}, \
-        ::xlog::level::trace, fmt ": %s [%d]" __VA_OPT__(,) __VA_ARGS__, std::strerror(errno), errno)
+        ::xlog::level::trace, fmt ": %s [%d]" , ##__VA_ARGS__, std::strerror(errno), errno)
 
 #define ZPLOG_BODY_DEBUG(fmt, ...) \
     ::xlog::default_logger_raw()->log_printf( \
         ::xlog::source_loc{__FILE__, __LINE__, XLOG_FUNCTION}, \
-        ::xlog::level::debug, fmt ": %s [%d]" __VA_OPT__(,) __VA_ARGS__, std::strerror(errno), errno)
+        ::xlog::level::debug, fmt ": %s [%d]" , ##__VA_ARGS__, std::strerror(errno), errno)
 
 #define ZPLOG_BODY_INFO(fmt, ...) \
     ::xlog::default_logger_raw()->log_printf( \
         ::xlog::source_loc{__FILE__, __LINE__, XLOG_FUNCTION}, \
-        ::xlog::level::info, fmt ": %s [%d]" __VA_OPT__(,) __VA_ARGS__, std::strerror(errno), errno)
+        ::xlog::level::info, fmt ": %s [%d]" , ##__VA_ARGS__, std::strerror(errno), errno)
 
 #define ZPLOG_BODY_WARNING(fmt, ...) \
     ::xlog::default_logger_raw()->log_printf( \
         ::xlog::source_loc{__FILE__, __LINE__, XLOG_FUNCTION}, \
-        ::xlog::level::warn, fmt ": %s [%d]" __VA_OPT__(,) __VA_ARGS__, std::strerror(errno), errno)
+        ::xlog::level::warn, fmt ": %s [%d]" , ##__VA_ARGS__, std::strerror(errno), errno)
 
 #define ZPLOG_BODY_ERROR(fmt, ...) \
     ::xlog::default_logger_raw()->log_printf( \
         ::xlog::source_loc{__FILE__, __LINE__, XLOG_FUNCTION}, \
-        ::xlog::level::err, fmt ": %s [%d]" __VA_OPT__(,) __VA_ARGS__, std::strerror(errno), errno)
+        ::xlog::level::err, fmt ": %s [%d]" , ##__VA_ARGS__, std::strerror(errno), errno)
 
 #define ZPLOG_BODY_FATAL(fmt, ...) \
     (::xlog::default_logger_raw()->log_printf( \
          ::xlog::source_loc{__FILE__, __LINE__, XLOG_FUNCTION}, \
-         ::xlog::level::critical, fmt ": %s [%d]" __VA_OPT__(,) __VA_ARGS__, \
+         ::xlog::level::critical, fmt ": %s [%d]" , ##__VA_ARGS__, \
          std::strerror(errno), errno), \
      ::std::abort())
 
 #define ZPLOG(severity, fmt, ...) \
     if (::xlog::log_level() <= XLOG_LEVEL_##severity) \
-        ZPLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+        ZPLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZPLOG_IF(severity, condition, fmt, ...) \
     if (::xlog::log_level() <= XLOG_LEVEL_##severity && (condition)) \
-        ZPLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+        ZPLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZPLOG_EVERY_N(severity, n, fmt, ...) \
     for (bool _zplog_enabled_ = ::xlog::log_level() <= XLOG_LEVEL_##severity; \
@@ -213,7 +213,7 @@
         for (static ::xlog::internal::LogEveryNState _zplog_state_; \
              _zplog_enabled_ && _zplog_state_.ShouldLog(n); \
              _zplog_enabled_ = false) \
-            ZPLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZPLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZPLOG_FIRST_N(severity, n, fmt, ...) \
     for (bool _zplog_enabled_ = ::xlog::log_level() <= XLOG_LEVEL_##severity; \
@@ -221,10 +221,10 @@
         for (static ::xlog::internal::LogFirstNState _zplog_state_; \
              _zplog_enabled_ && _zplog_state_.ShouldLog(n); \
              _zplog_enabled_ = false) \
-            ZPLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZPLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZPLOG_ONCE(severity, fmt, ...) \
-    ZPLOG_FIRST_N(severity, 1, fmt __VA_OPT__(,) __VA_ARGS__)
+    ZPLOG_FIRST_N(severity, 1, fmt , ##__VA_ARGS__)
 
 #define ZPLOG_EVERY_POW_2(severity, fmt, ...) \
     for (bool _zplog_enabled_ = ::xlog::log_level() <= XLOG_LEVEL_##severity; \
@@ -232,7 +232,7 @@
         for (static ::xlog::internal::LogEveryPow2State _zplog_state_; \
              _zplog_enabled_ && _zplog_state_.ShouldLog(); \
              _zplog_enabled_ = false) \
-            ZPLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZPLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZPLOG_EVERY_N_SEC(severity, n_seconds, fmt, ...) \
     for (bool _zplog_enabled_ = ::xlog::log_level() <= XLOG_LEVEL_##severity; \
@@ -240,13 +240,13 @@
         for (static ::xlog::internal::LogEveryNSecState _zplog_state_; \
              _zplog_enabled_ && _zplog_state_.ShouldLog(n_seconds); \
              _zplog_enabled_ = false) \
-            ZPLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZPLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZPLOG_EVERY_SEC(severity, fmt, ...) \
-    ZPLOG_EVERY_N_SEC(severity, 1, fmt __VA_OPT__(,) __VA_ARGS__)
+    ZPLOG_EVERY_N_SEC(severity, 1, fmt , ##__VA_ARGS__)
 
 #define ZPLOG_EVERY_MIN(severity, fmt, ...) \
-    ZPLOG_EVERY_N_SEC(severity, 60, fmt __VA_OPT__(,) __VA_ARGS__)
+    ZPLOG_EVERY_N_SEC(severity, 60, fmt , ##__VA_ARGS__)
 
 #define ZPLOG_IF_EVERY_N(severity, condition, n, fmt, ...) \
     for (bool _zplog_enabled_ = ::xlog::log_level() <= XLOG_LEVEL_##severity && (condition); \
@@ -254,7 +254,7 @@
         for (static ::xlog::internal::LogEveryNState _zplog_state_; \
              _zplog_enabled_ && _zplog_state_.ShouldLog(n); \
              _zplog_enabled_ = false) \
-            ZPLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZPLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZPLOG_IF_FIRST_N(severity, condition, n, fmt, ...) \
     for (bool _zplog_enabled_ = ::xlog::log_level() <= XLOG_LEVEL_##severity && (condition); \
@@ -262,10 +262,10 @@
         for (static ::xlog::internal::LogFirstNState _zplog_state_; \
              _zplog_enabled_ && _zplog_state_.ShouldLog(n); \
              _zplog_enabled_ = false) \
-            ZPLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZPLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZPLOG_IF_ONCE(severity, condition, fmt, ...) \
-    ZPLOG_IF_FIRST_N(severity, condition, 1, fmt __VA_OPT__(,) __VA_ARGS__)
+    ZPLOG_IF_FIRST_N(severity, condition, 1, fmt , ##__VA_ARGS__)
 
 #define ZPLOG_IF_EVERY_POW_2(severity, condition, fmt, ...) \
     for (bool _zplog_enabled_ = ::xlog::log_level() <= XLOG_LEVEL_##severity && (condition); \
@@ -273,7 +273,7 @@
         for (static ::xlog::internal::LogEveryPow2State _zplog_state_; \
              _zplog_enabled_ && _zplog_state_.ShouldLog(); \
              _zplog_enabled_ = false) \
-            ZPLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZPLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZPLOG_IF_EVERY_N_SEC(severity, condition, n_seconds, fmt, ...) \
     for (bool _zplog_enabled_ = ::xlog::log_level() <= XLOG_LEVEL_##severity && (condition); \
@@ -281,13 +281,13 @@
         for (static ::xlog::internal::LogEveryNSecState _zplog_state_; \
              _zplog_enabled_ && _zplog_state_.ShouldLog(n_seconds); \
              _zplog_enabled_ = false) \
-            ZPLOG_BODY_##severity(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZPLOG_BODY_##severity(fmt , ##__VA_ARGS__)
 
 #define ZPLOG_IF_EVERY_SEC(severity, condition, fmt, ...) \
-    ZPLOG_IF_EVERY_N_SEC(severity, condition, 1, fmt __VA_OPT__(,) __VA_ARGS__)
+    ZPLOG_IF_EVERY_N_SEC(severity, condition, 1, fmt , ##__VA_ARGS__)
 
 #define ZPLOG_IF_EVERY_MIN(severity, condition, fmt, ...) \
-    ZPLOG_IF_EVERY_N_SEC(severity, condition, 60, fmt __VA_OPT__(,) __VA_ARGS__)
+    ZPLOG_IF_EVERY_N_SEC(severity, condition, 60, fmt , ##__VA_ARGS__)
 
 #define ZPLOG_LEVEL(severity, fmt, ...) \
     do { \
@@ -295,7 +295,7 @@
         if (::xlog::log_level() <= _zplog_sev_) { \
             ::xlog::default_logger_raw()->log_printf( \
                 ::xlog::source_loc{__FILE__, __LINE__, XLOG_FUNCTION}, \
-                _zplog_sev_, fmt ": %s [%d]" __VA_OPT__(,) __VA_ARGS__, \
+                _zplog_sev_, fmt ": %s [%d]" , ##__VA_ARGS__, \
                 std::strerror(errno), errno); \
             if (_zplog_sev_ == ::xlog::level::critical) ::std::abort(); \
         } \
@@ -310,7 +310,7 @@
     case 0: \
     default: \
         if (::xlog::vlog_is_on(_zlog_verbose_)) \
-            ZLOG_BODY_TRACE(fmt __VA_OPT__(,) __VA_ARGS__)
+            ZLOG_BODY_TRACE(fmt , ##__VA_ARGS__)
 
 #define VZLOG_EVERY_N(verbose_level, n, fmt, ...) \
     switch (const int _zlog_verbose_ = (verbose_level)) \
@@ -321,7 +321,7 @@
             for (static ::xlog::internal::LogEveryNState _zlog_state_; \
                  _zlog_enabled_ && _zlog_state_.ShouldLog(n); \
                  _zlog_enabled_ = false) \
-                ZLOG_BODY_TRACE(fmt __VA_OPT__(,) __VA_ARGS__)
+                ZLOG_BODY_TRACE(fmt , ##__VA_ARGS__)
 
 #define VZLOG_FIRST_N(verbose_level, n, fmt, ...) \
     switch (const int _zlog_verbose_ = (verbose_level)) \
@@ -332,10 +332,10 @@
             for (static ::xlog::internal::LogFirstNState _zlog_state_; \
                  _zlog_enabled_ && _zlog_state_.ShouldLog(n); \
                  _zlog_enabled_ = false) \
-                ZLOG_BODY_TRACE(fmt __VA_OPT__(,) __VA_ARGS__)
+                ZLOG_BODY_TRACE(fmt , ##__VA_ARGS__)
 
 #define VZLOG_ONCE(verbose_level, fmt, ...) \
-    VZLOG_FIRST_N(verbose_level, 1, fmt __VA_OPT__(,) __VA_ARGS__)
+    VZLOG_FIRST_N(verbose_level, 1, fmt , ##__VA_ARGS__)
 
 #define VZLOG_EVERY_POW_2(verbose_level, fmt, ...) \
     switch (const int _zlog_verbose_ = (verbose_level)) \
@@ -346,7 +346,7 @@
             for (static ::xlog::internal::LogEveryPow2State _zlog_state_; \
                  _zlog_enabled_ && _zlog_state_.ShouldLog(); \
                  _zlog_enabled_ = false) \
-                ZLOG_BODY_TRACE(fmt __VA_OPT__(,) __VA_ARGS__)
+                ZLOG_BODY_TRACE(fmt , ##__VA_ARGS__)
 
 #define VZLOG_EVERY_N_SEC(verbose_level, n_seconds, fmt, ...) \
     switch (const int _zlog_verbose_ = (verbose_level)) \
@@ -357,13 +357,13 @@
             for (static ::xlog::internal::LogEveryNSecState _zlog_state_; \
                  _zlog_enabled_ && _zlog_state_.ShouldLog(n_seconds); \
                  _zlog_enabled_ = false) \
-                ZLOG_BODY_TRACE(fmt __VA_OPT__(,) __VA_ARGS__)
+                ZLOG_BODY_TRACE(fmt , ##__VA_ARGS__)
 
 #define VZLOG_EVERY_SEC(verbose_level, fmt, ...) \
-    VZLOG_EVERY_N_SEC(verbose_level, 1, fmt __VA_OPT__(,) __VA_ARGS__)
+    VZLOG_EVERY_N_SEC(verbose_level, 1, fmt , ##__VA_ARGS__)
 
 #define VZLOG_EVERY_MIN(verbose_level, fmt, ...) \
-    VZLOG_EVERY_N_SEC(verbose_level, 60, fmt __VA_OPT__(,) __VA_ARGS__)
+    VZLOG_EVERY_N_SEC(verbose_level, 60, fmt , ##__VA_ARGS__)
 
 // ============================================================================
 // DZLOG / DVZLOG — debug-only variants
@@ -371,48 +371,48 @@
 
 #ifndef NDEBUG
 
-#define DZLOG(severity, fmt, ...)                  ZLOG(severity, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_IF(severity, cond, fmt, ...)          ZLOG_IF(severity, cond, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_EVERY_N(severity, n, fmt, ...)        ZLOG_EVERY_N(severity, n, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_FIRST_N(severity, n, fmt, ...)        ZLOG_FIRST_N(severity, n, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_ONCE(severity, fmt, ...)              ZLOG_ONCE(severity, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_EVERY_POW_2(severity, fmt, ...)       ZLOG_EVERY_POW_2(severity, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_EVERY_N_SEC(severity, s, fmt, ...)    ZLOG_EVERY_N_SEC(severity, s, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_EVERY_SEC(severity, fmt, ...)         ZLOG_EVERY_SEC(severity, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_EVERY_MIN(severity, fmt, ...)         ZLOG_EVERY_MIN(severity, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_IF_EVERY_N(severity, c, n, fmt, ...)  ZLOG_IF_EVERY_N(severity, c, n, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_IF_FIRST_N(severity, c, n, fmt, ...)  ZLOG_IF_FIRST_N(severity, c, n, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_IF_ONCE(severity, c, fmt, ...)        ZLOG_IF_ONCE(severity, c, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_IF_EVERY_POW_2(severity, c, fmt, ...) ZLOG_IF_EVERY_POW_2(severity, c, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_IF_EVERY_N_SEC(severity, c, s, fmt, ...) ZLOG_IF_EVERY_N_SEC(severity, c, s, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_IF_EVERY_SEC(severity, c, fmt, ...)   ZLOG_IF_EVERY_SEC(severity, c, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZLOG_IF_EVERY_MIN(severity, c, fmt, ...)   ZLOG_IF_EVERY_MIN(severity, c, fmt __VA_OPT__(,) __VA_ARGS__)
+#define DZLOG(severity, fmt, ...)                  ZLOG(severity, fmt , ##__VA_ARGS__)
+#define DZLOG_IF(severity, cond, fmt, ...)          ZLOG_IF(severity, cond, fmt , ##__VA_ARGS__)
+#define DZLOG_EVERY_N(severity, n, fmt, ...)        ZLOG_EVERY_N(severity, n, fmt , ##__VA_ARGS__)
+#define DZLOG_FIRST_N(severity, n, fmt, ...)        ZLOG_FIRST_N(severity, n, fmt , ##__VA_ARGS__)
+#define DZLOG_ONCE(severity, fmt, ...)              ZLOG_ONCE(severity, fmt , ##__VA_ARGS__)
+#define DZLOG_EVERY_POW_2(severity, fmt, ...)       ZLOG_EVERY_POW_2(severity, fmt , ##__VA_ARGS__)
+#define DZLOG_EVERY_N_SEC(severity, s, fmt, ...)    ZLOG_EVERY_N_SEC(severity, s, fmt , ##__VA_ARGS__)
+#define DZLOG_EVERY_SEC(severity, fmt, ...)         ZLOG_EVERY_SEC(severity, fmt , ##__VA_ARGS__)
+#define DZLOG_EVERY_MIN(severity, fmt, ...)         ZLOG_EVERY_MIN(severity, fmt , ##__VA_ARGS__)
+#define DZLOG_IF_EVERY_N(severity, c, n, fmt, ...)  ZLOG_IF_EVERY_N(severity, c, n, fmt , ##__VA_ARGS__)
+#define DZLOG_IF_FIRST_N(severity, c, n, fmt, ...)  ZLOG_IF_FIRST_N(severity, c, n, fmt , ##__VA_ARGS__)
+#define DZLOG_IF_ONCE(severity, c, fmt, ...)        ZLOG_IF_ONCE(severity, c, fmt , ##__VA_ARGS__)
+#define DZLOG_IF_EVERY_POW_2(severity, c, fmt, ...) ZLOG_IF_EVERY_POW_2(severity, c, fmt , ##__VA_ARGS__)
+#define DZLOG_IF_EVERY_N_SEC(severity, c, s, fmt, ...) ZLOG_IF_EVERY_N_SEC(severity, c, s, fmt , ##__VA_ARGS__)
+#define DZLOG_IF_EVERY_SEC(severity, c, fmt, ...)   ZLOG_IF_EVERY_SEC(severity, c, fmt , ##__VA_ARGS__)
+#define DZLOG_IF_EVERY_MIN(severity, c, fmt, ...)   ZLOG_IF_EVERY_MIN(severity, c, fmt , ##__VA_ARGS__)
 
-#define DZPLOG(severity, fmt, ...)                  ZPLOG(severity, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_IF(severity, cond, fmt, ...)          ZPLOG_IF(severity, cond, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_EVERY_N(severity, n, fmt, ...)        ZPLOG_EVERY_N(severity, n, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_FIRST_N(severity, n, fmt, ...)        ZPLOG_FIRST_N(severity, n, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_ONCE(severity, fmt, ...)              ZPLOG_ONCE(severity, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_EVERY_POW_2(severity, fmt, ...)       ZPLOG_EVERY_POW_2(severity, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_EVERY_N_SEC(severity, s, fmt, ...)    ZPLOG_EVERY_N_SEC(severity, s, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_EVERY_SEC(severity, fmt, ...)         ZPLOG_EVERY_SEC(severity, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_EVERY_MIN(severity, fmt, ...)         ZPLOG_EVERY_MIN(severity, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_IF_EVERY_N(severity, c, n, fmt, ...)  ZPLOG_IF_EVERY_N(severity, c, n, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_IF_FIRST_N(severity, c, n, fmt, ...)  ZPLOG_IF_FIRST_N(severity, c, n, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_IF_ONCE(severity, c, fmt, ...)        ZPLOG_IF_ONCE(severity, c, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_IF_EVERY_POW_2(severity, c, fmt, ...) ZPLOG_IF_EVERY_POW_2(severity, c, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_IF_EVERY_N_SEC(severity, c, s, fmt, ...) ZPLOG_IF_EVERY_N_SEC(severity, c, s, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_IF_EVERY_SEC(severity, c, fmt, ...)   ZPLOG_IF_EVERY_SEC(severity, c, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DZPLOG_IF_EVERY_MIN(severity, c, fmt, ...)   ZPLOG_IF_EVERY_MIN(severity, c, fmt __VA_OPT__(,) __VA_ARGS__)
+#define DZPLOG(severity, fmt, ...)                  ZPLOG(severity, fmt , ##__VA_ARGS__)
+#define DZPLOG_IF(severity, cond, fmt, ...)          ZPLOG_IF(severity, cond, fmt , ##__VA_ARGS__)
+#define DZPLOG_EVERY_N(severity, n, fmt, ...)        ZPLOG_EVERY_N(severity, n, fmt , ##__VA_ARGS__)
+#define DZPLOG_FIRST_N(severity, n, fmt, ...)        ZPLOG_FIRST_N(severity, n, fmt , ##__VA_ARGS__)
+#define DZPLOG_ONCE(severity, fmt, ...)              ZPLOG_ONCE(severity, fmt , ##__VA_ARGS__)
+#define DZPLOG_EVERY_POW_2(severity, fmt, ...)       ZPLOG_EVERY_POW_2(severity, fmt , ##__VA_ARGS__)
+#define DZPLOG_EVERY_N_SEC(severity, s, fmt, ...)    ZPLOG_EVERY_N_SEC(severity, s, fmt , ##__VA_ARGS__)
+#define DZPLOG_EVERY_SEC(severity, fmt, ...)         ZPLOG_EVERY_SEC(severity, fmt , ##__VA_ARGS__)
+#define DZPLOG_EVERY_MIN(severity, fmt, ...)         ZPLOG_EVERY_MIN(severity, fmt , ##__VA_ARGS__)
+#define DZPLOG_IF_EVERY_N(severity, c, n, fmt, ...)  ZPLOG_IF_EVERY_N(severity, c, n, fmt , ##__VA_ARGS__)
+#define DZPLOG_IF_FIRST_N(severity, c, n, fmt, ...)  ZPLOG_IF_FIRST_N(severity, c, n, fmt , ##__VA_ARGS__)
+#define DZPLOG_IF_ONCE(severity, c, fmt, ...)        ZPLOG_IF_ONCE(severity, c, fmt , ##__VA_ARGS__)
+#define DZPLOG_IF_EVERY_POW_2(severity, c, fmt, ...) ZPLOG_IF_EVERY_POW_2(severity, c, fmt , ##__VA_ARGS__)
+#define DZPLOG_IF_EVERY_N_SEC(severity, c, s, fmt, ...) ZPLOG_IF_EVERY_N_SEC(severity, c, s, fmt , ##__VA_ARGS__)
+#define DZPLOG_IF_EVERY_SEC(severity, c, fmt, ...)   ZPLOG_IF_EVERY_SEC(severity, c, fmt , ##__VA_ARGS__)
+#define DZPLOG_IF_EVERY_MIN(severity, c, fmt, ...)   ZPLOG_IF_EVERY_MIN(severity, c, fmt , ##__VA_ARGS__)
 
-#define DVZLOG(v, fmt, ...)                         VZLOG(v, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DVZLOG_EVERY_N(v, n, fmt, ...)              VZLOG_EVERY_N(v, n, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DVZLOG_FIRST_N(v, n, fmt, ...)              VZLOG_FIRST_N(v, n, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DVZLOG_ONCE(v, fmt, ...)                    VZLOG_ONCE(v, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DVZLOG_EVERY_POW_2(v, fmt, ...)             VZLOG_EVERY_POW_2(v, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DVZLOG_EVERY_N_SEC(v, s, fmt, ...)          VZLOG_EVERY_N_SEC(v, s, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DVZLOG_EVERY_SEC(v, fmt, ...)               VZLOG_EVERY_SEC(v, fmt __VA_OPT__(,) __VA_ARGS__)
-#define DVZLOG_EVERY_MIN(v, fmt, ...)               VZLOG_EVERY_MIN(v, fmt __VA_OPT__(,) __VA_ARGS__)
+#define DVZLOG(v, fmt, ...)                         VZLOG(v, fmt , ##__VA_ARGS__)
+#define DVZLOG_EVERY_N(v, n, fmt, ...)              VZLOG_EVERY_N(v, n, fmt , ##__VA_ARGS__)
+#define DVZLOG_FIRST_N(v, n, fmt, ...)              VZLOG_FIRST_N(v, n, fmt , ##__VA_ARGS__)
+#define DVZLOG_ONCE(v, fmt, ...)                    VZLOG_ONCE(v, fmt , ##__VA_ARGS__)
+#define DVZLOG_EVERY_POW_2(v, fmt, ...)             VZLOG_EVERY_POW_2(v, fmt , ##__VA_ARGS__)
+#define DVZLOG_EVERY_N_SEC(v, s, fmt, ...)          VZLOG_EVERY_N_SEC(v, s, fmt , ##__VA_ARGS__)
+#define DVZLOG_EVERY_SEC(v, fmt, ...)               VZLOG_EVERY_SEC(v, fmt , ##__VA_ARGS__)
+#define DVZLOG_EVERY_MIN(v, fmt, ...)               VZLOG_EVERY_MIN(v, fmt , ##__VA_ARGS__)
 
 #else // NDEBUG
 
@@ -471,7 +471,7 @@
         if (::xlog::log_level() <= _zlog_sev_) { \
             ::xlog::default_logger_raw()->log_printf( \
                 ::xlog::source_loc{__FILE__, __LINE__, XLOG_FUNCTION}, \
-                _zlog_sev_, fmt __VA_OPT__(,) __VA_ARGS__); \
+                _zlog_sev_, fmt , ##__VA_ARGS__); \
             if (_zlog_sev_ == ::xlog::level::critical) ::std::abort(); \
         } \
     } while (0)
