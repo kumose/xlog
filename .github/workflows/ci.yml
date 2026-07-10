@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake g++
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DKMCMAKE_BUILD_TEST=ON
+      - name: Build
+        run: cmake --build build -j$(nproc)
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -j1
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: brew install cmake
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DKMCMAKE_BUILD_TEST=ON
+      - name: Build
+        run: cmake --build build -j$(sysctl -n hw.logicalcpu)
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -j1
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DKMCMAKE_BUILD_TEST=ON
+      - name: Build
+        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -j1
