@@ -30,8 +30,8 @@ endif ()
 
 set(PROJECT_DESCRIPTION "xlog is a C++ logging library with stream, fmt, and printf macros, unified runtime filtering, rich sinks and formatters, and optional header-only upstream adapters for glog, turbo, and abseil.")
 set(PROJECT_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 5)
+set(PROJECT_VERSION_MINOR 4)
+set(PROJECT_VERSION_PATCH 0)
 set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 set(${PROJECT_NAME}_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
