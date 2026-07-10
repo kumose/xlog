@@ -50,6 +50,7 @@ foreach(test_name ${xlog_test_sources})
         NAME ${test_name}
         MODULE ${PROJECT_NAME}
         SOURCES ${test_name}.cpp main.cpp utils.cpp
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
         LINKS ${PROJECT_NAME}_static
         DEPS ${PROJECT_NAME}_static
     )
