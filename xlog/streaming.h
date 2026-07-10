@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
+#include <iterator>
 #include <string>
 #include <type_traits>
 
