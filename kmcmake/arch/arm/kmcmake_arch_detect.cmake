@@ -30,25 +30,18 @@ set(KMCMAKE_ARM_HAS_NEON FALSE)
 set(KMCMAKE_ARM_HAS_VFPv4 FALSE)
 set(KMCMAKE_ARM_HAS_FMA FALSE)
 
-# AI: On AArch64 (ARM64), NEON/FMA are part of the base ISA — no -mfpu flags needed.
-# AI: On ARM32, -mfpu flags are required for detection and compilation.
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(NEON_FLAG  "")
-    set(VFPv4_FLAG "")
-    set(FMA_FLAG   "")
-else()
-    set(NEON_FLAG  "-mfpu=neon")
-    set(VFPv4_FLAG "-mfpu=vfpv4")
-    set(FMA_FLAG   "-mfpu=neon -mfma")
-endif()
+set(NEON_FLAG "-mfpu=neon")
+set(VFPv4_FLAG "-mfpu=vfpv4")
+set(FMA_FLAG "-mfpu=neon -mfma")
 
-include(CheckCXXSourceRuns)
+include(CheckCXXSourceCompiles)
 
 # NEON check
 set(NEON_CODE "
 #include <arm_neon.h>
 int main() { float32x4_t a = vdupq_n_f32(0.0f); return 0; }")
-check_cxx_source_runs("${NEON_CODE}" _KMCMAKE_ARM_NEON_OK COMPILE_FLAGS "${NEON_FLAG}")
+set(CMAKE_REQUIRED_FLAGS "${NEON_FLAG}")
+check_cxx_source_compiles("${NEON_CODE}" _KMCMAKE_ARM_NEON_OK)
 if(_KMCMAKE_ARM_NEON_OK)
     set(KMCMAKE_ARM_HAS_NEON TRUE)
 endif()
@@ -59,7 +52,8 @@ set(VFPv4_CODE "
 #include <arm_math.h>
 #endif
 int main() { float a = 0.0f; return 0; }")
-check_cxx_source_runs("${VFPv4_CODE}" _KMCMAKE_ARM_VFPv4_OK COMPILE_FLAGS "${VFPv4_FLAG}")
+set(CMAKE_REQUIRED_FLAGS "${VFPv4_FLAG}")
+check_cxx_source_compiles("${VFPv4_CODE}" _KMCMAKE_ARM_VFPv4_OK)
 if(_KMCMAKE_ARM_VFPv4_OK)
     set(KMCMAKE_ARM_HAS_VFPv4 TRUE)
 endif()
@@ -70,10 +64,14 @@ set(FMA_CODE "
 #include <arm_neon.h>
 #endif
 int main() { float32x4_t a = vdupq_n_f32(1.0f); float32x4_t b = vdupq_n_f32(2.0f); float32x4_t c = vfmaq_f32(a, b, a); return 0; }")
-check_cxx_source_runs("${FMA_CODE}" _KMCMAKE_ARM_FMA_OK COMPILE_FLAGS "${FMA_FLAG}")
+set(CMAKE_REQUIRED_FLAGS "${FMA_FLAG}")
+check_cxx_source_compiles("${FMA_CODE}" _KMCMAKE_ARM_FMA_OK)
 if(_KMCMAKE_ARM_FMA_OK)
     set(KMCMAKE_ARM_HAS_FMA TRUE)
 endif()
+
+# Reset
+set(CMAKE_REQUIRED_FLAGS "")
 
 kmcmake_print("ARM SIMD detection complete")
 kmcmake_print_label("ARM HAS_NEON"  ${KMCMAKE_ARM_HAS_NEON})

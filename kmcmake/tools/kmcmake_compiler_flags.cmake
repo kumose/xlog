@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# AI: Compiler flags definitions and compiler/architecture detection.
+# AI: Compiler flags definitions and compiler detection.
 # AI: Exports the following variables for users to consume:
 # AI:   KMCMAKE_BASE_CXX_FLAGS   - base compiler flags for current compiler
 # AI:   KMCMAKE_BASE_LINK_FLAGS  - linker flags for current compiler
-# AI:   KMCMAKE_RANDEN_FLAGS     - AES/hardware random flags
 # AI:
 # AI: Also sets CMAKE_CXX_STANDARD, CMAKE_BUILD_TYPE defaults, and
 # AI: debug/release mode flags (CMAKE_CXX_FLAGS_*).
@@ -116,21 +115,6 @@ set(_KMCMAKE_MSVC_LINKOPTS
 )
 
 # ============================================================
-# Architecture-specific hardware AES flags
-# ============================================================
-set(_KMCMAKE_RANDOM_HWAES_ARM32_FLAGS
-    "-mfpu=neon"
-)
-set(_KMCMAKE_RANDOM_HWAES_ARM64_FLAGS
-    "-march=armv8-a+crypto"
-)
-set(_KMCMAKE_RANDOM_HWAES_MSVC_X64_FLAGS)
-set(_KMCMAKE_RANDOM_HWAES_X64_FLAGS
-    "-maes"
-    "-msse4.1"
-)
-
-# ============================================================
 # Select base flags by compiler ID
 # ============================================================
 set(KMCMAKE_BASE_LINK_FLAGS "")
@@ -160,27 +144,6 @@ else ()
 endif ()
 
 # ============================================================
-# Select RANDEN flags by architecture
-# ============================================================
-if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64")
-    if (MSVC)
-        set(KMCMAKE_RANDEN_FLAGS "${_KMCMAKE_RANDOM_HWAES_MSVC_X64_FLAGS}")
-    else ()
-        set(KMCMAKE_RANDEN_FLAGS "${_KMCMAKE_RANDOM_HWAES_X64_FLAGS}")
-    endif ()
-elseif ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm.*|aarch64")
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
-        set(KMCMAKE_RANDEN_FLAGS "")
-    elseif ("${CMAKE_SIZEOF_VOID_P}" STREQUAL "8")
-        set(KMCMAKE_RANDEN_FLAGS "${_KMCMAKE_RANDOM_HWAES_ARM64_FLAGS}")
-    else ()
-        set(KMCMAKE_RANDEN_FLAGS "${_KMCMAKE_RANDOM_HWAES_ARM32_FLAGS}")
-    endif ()
-else ()
-    set(KMCMAKE_RANDEN_FLAGS "")
-endif ()
-
-# ============================================================
 # C++ standard and build type defaults
 # ============================================================
 if(MSVC)
@@ -204,4 +167,3 @@ if (DEFINED ENV{KMCMAKE_CXX_FLAGS})
 endif ()
 
 kmcmake_print_list_label("BASE_CXX_FLAGS:" KMCMAKE_BASE_CXX_FLAGS)
-kmcmake_print_list_label("RANDEN_FLAGS:"   KMCMAKE_RANDEN_FLAGS)

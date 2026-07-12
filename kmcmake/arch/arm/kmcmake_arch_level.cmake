@@ -32,13 +32,13 @@ endif()
 
 # AI: For ARM, SIMD level is simpler: NEON is the primary target.
 # AI: FMA is enabled alongside NEON when available.
-if(KMCMAKE_ARM_HAS_NEON AND NEON_FLAG)
+if(KMCMAKE_ARM_HAS_NEON)
     list(APPEND KMCMAKE_ARCH_OPTION ${NEON_FLAG})
 endif()
-if(KMCMAKE_ARM_HAS_VFPv4 AND VFPv4_FLAG)
+if(KMCMAKE_ARM_HAS_VFPv4)
     list(APPEND KMCMAKE_ARCH_OPTION ${VFPv4_FLAG})
 endif()
-if(KMCMAKE_ARM_HAS_FMA AND FMA_FLAG)
+if(KMCMAKE_ARM_HAS_FMA)
     list(APPEND KMCMAKE_ARCH_OPTION ${FMA_FLAG})
     set(KMCMAKE_ARCH_ENABLE_FMA TRUE)
 endif()
