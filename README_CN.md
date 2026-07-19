@@ -13,8 +13,38 @@ xlog
 
 [English](./README.md)
 
+轻量 absl/glog 风格日志库（stream / fmt / printf），sink 为多组 registry
+（不删除，通过 `set_default` 切换）。
 
-xlog 项目说明
+## 用法
+
+```cpp
+#include <xlog/logging.h>   // XLOG / TLOG / ZLOG / XCHECK / initialize_log
+
+int main() {
+  xlog::initialize_log();
+  XLOG(INFO) << "hello " << 42;
+  TLOG(WARNING, "fmt {}", 1);
+  ZLOG(ERROR, "printf %d", 2);
+  XCHECK_NE(ptr, nullptr) << "need ptr";
+}
+```
+
+| API | 风格 |
+|-----|------|
+| `XLOG` / `DXLOG` | `operator<<` |
+| `TLOG` / `DTLOG` | `fmt::format`（`print`） |
+| `ZLOG` / `DZLOG` | printf（`fmt::sprintf`） |
+| `XCHECK*` / `DXCHECK*` | 致命检查 |
+
+**Sink：** `LogSinkRegistry` 管理多组 sink set，同一时刻一个 default；
+`add_log_sink` / `add_log_sinks` 注册，`set_default(id)` 切换；不提供 remove。
+
+**编译期开关（可选）：**
+- `XLOG_MIN_LOG_LEVEL=<int>` — 低于该 `LogSeverity` 的宏被短路（0=TRACE … 5=FATAL）
+- `XLOG_STRIP_LOG=1` — 非 FATAL 变为 `NullStream`；FATAL/CHECK 仍会终止进程
+
+**前缀：** 全局 `set_log_with_prefix` / `set_utc`；暂无单条 `.no_prefix()`。
 
 ## 🛠️ Build
 

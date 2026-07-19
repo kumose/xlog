@@ -13,8 +13,40 @@ xlog
 
 [中文版](./README_CN.md)
 
+Minimal absl/glog-style logging library (stream / fmt / printf), with a
+multi-set sink registry (no remove; switch via `set_default`).
 
-xlog Project Description
+## Usage
+
+```cpp
+#include <xlog/logging.h>   // XLOG / TLOG / ZLOG / XCHECK / initialize_log
+
+int main() {
+  xlog::initialize_log();
+  XLOG(INFO) << "hello " << 42;
+  TLOG(WARNING, "fmt {}", 1);
+  ZLOG(ERROR, "printf %d", 2);
+  XCHECK_NE(ptr, nullptr) << "need ptr";
+}
+```
+
+| API | Style |
+|-----|--------|
+| `XLOG` / `DXLOG` | `operator<<` |
+| `TLOG` / `DTLOG` | `fmt::format` (`print`) |
+| `ZLOG` / `DZLOG` | printf (`fmt::sprintf`) |
+| `XCHECK*` / `DXCHECK*` | fatal checks |
+
+**Sinks:** `LogSinkRegistry` holds named sink sets; only one is default.
+`add_log_sink` / `add_log_sinks` register sets; `set_default(id)` switches.
+There is no remove (hot path can use a raw `LogSinkSet*`).
+
+**Compile-time controls (optional):**
+- `XLOG_MIN_LOG_LEVEL=<int>` — gate macros below that `LogSeverity` (0=TRACE … 5=FATAL)
+- `XLOG_STRIP_LOG=1` — non-fatal logs become `NullStream`; FATAL/CHECK still terminate
+
+**Prefix:** global `xlog::set_log_with_prefix(bool)` / `set_utc(bool)`.
+There is no per-statement `.no_prefix()` yet.
 
 ## 🛠️ Build
 

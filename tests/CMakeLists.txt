@@ -109,3 +109,32 @@ foreach (test ${XLOG_LOG_TESTS})
             ${KMCMAKE_DEPS_LINK}
     )
 endforeach ()
+
+# Compile-time gates (separate TUs / defines).
+kmcmake_cc_test(
+        NAME min_log_level_test
+        MODULE log
+        SOURCES min_log_level_test.cc
+        DEFINES XLOG_MIN_LOG_LEVEL=3
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+        LINKS
+        GTest::gtest
+        GTest::gmock
+        xlog::test_support_static
+        xlog::xlog_static
+        ${KMCMAKE_DEPS_LINK}
+)
+
+kmcmake_cc_test(
+        NAME strip_log_test
+        MODULE log
+        SOURCES strip_log_test.cc
+        DEFINES XLOG_STRIP_LOG=1
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+        LINKS
+        GTest::gtest
+        GTest::gmock
+        xlog::test_support_static
+        xlog::xlog_static
+        ${KMCMAKE_DEPS_LINK}
+)
