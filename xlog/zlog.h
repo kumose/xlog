@@ -15,6 +15,7 @@
 // printf-style logging macros (ZLOG → LogMessage::printf / fmt::sprintf).
 //
 //   ZLOG(INFO, "Found %d cookies", n);
+//   ZVLOG(2, "verbose %d", n);   // INFO if verbosity >= 2
 //   ZLOG_IF(WARNING, n > 10, "lots %d", n);
 //   ZLOG_EVERY_N(ERROR, 100, "again %u", COUNTER);
 //   ZLOG(LEVEL(sev), "dynamic %d", x);
@@ -25,6 +26,35 @@
 
 #define ZLOG(severity, ...) XLOG_INTERNAL_ZLOG_IMPL(_##severity, __VA_ARGS__)
 #define DZLOG(severity, ...) XLOG_INTERNAL_DZLOG_IMPL(_##severity, __VA_ARGS__)
+
+// ZVLOG(n, ...) — printf verbose INFO (same gates as XVLOG).
+#define ZVLOG(verbose_level, ...) \
+    XLOG_INTERNAL_ZVLOG_IMPL(verbose_level, __VA_ARGS__)
+#define DZVLOG(verbose_level, ...) \
+    XLOG_INTERNAL_DZVLOG_IMPL(verbose_level, __VA_ARGS__)
+
+#define ZVLOG_EVERY_N(verbose_level, n, ...) \
+    XLOG_INTERNAL_ZVLOG_EVERY_N_IMPL(verbose_level, n, __VA_ARGS__)
+#define ZVLOG_FIRST_N(verbose_level, n, ...) \
+    XLOG_INTERNAL_ZVLOG_FIRST_N_IMPL(verbose_level, n, __VA_ARGS__)
+#define ZVLOG_ONCE(verbose_level, ...) \
+    XLOG_INTERNAL_ZVLOG_FIRST_N_IMPL(verbose_level, 1, __VA_ARGS__)
+#define ZVLOG_EVERY_POW_2(verbose_level, ...) \
+    XLOG_INTERNAL_ZVLOG_EVERY_POW_2_IMPL(verbose_level, __VA_ARGS__)
+#define ZVLOG_EVERY_N_SEC(verbose_level, n_seconds, ...) \
+    XLOG_INTERNAL_ZVLOG_EVERY_N_SEC_IMPL(verbose_level, n_seconds, __VA_ARGS__)
+
+#define DZVLOG_EVERY_N(verbose_level, n, ...) \
+    XLOG_INTERNAL_DZVLOG_EVERY_N_IMPL(verbose_level, n, __VA_ARGS__)
+#define DZVLOG_FIRST_N(verbose_level, n, ...) \
+    XLOG_INTERNAL_DZVLOG_FIRST_N_IMPL(verbose_level, n, __VA_ARGS__)
+#define DZVLOG_ONCE(verbose_level, ...) \
+    XLOG_INTERNAL_DZVLOG_FIRST_N_IMPL(verbose_level, 1, __VA_ARGS__)
+#define DZVLOG_EVERY_POW_2(verbose_level, ...) \
+    XLOG_INTERNAL_DZVLOG_EVERY_POW_2_IMPL(verbose_level, __VA_ARGS__)
+#define DZVLOG_EVERY_N_SEC(verbose_level, n_seconds, ...) \
+    XLOG_INTERNAL_DZVLOG_EVERY_N_SEC_IMPL(verbose_level, n_seconds, \
+                                          __VA_ARGS__)
 
 #define ZLOG_IF(severity, condition, ...) \
     XLOG_INTERNAL_ZLOG_IF_IMPL(_##severity, condition, __VA_ARGS__)

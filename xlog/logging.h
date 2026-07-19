@@ -20,6 +20,8 @@
 //   XLOG(INFO).no_prefix() << "raw";
 //   XPLOG(ERROR) << "open failed";
 //   XVLOG(1) << "verbose";   // INFO if verbosity >= 1
+//   TVLOG(1, "x={}", 1);
+//   ZVLOG(1, "x=%d", 1);
 //   XVLOG_EVERY_N(1, 100) << COUNTER;
 //   TLOG(INFO, "x={}", 1);
 //   ZLOG(INFO, "x=%d", 1);

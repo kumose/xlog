@@ -35,6 +35,8 @@ int main() {
 | `XLOG` / `DXLOG` | `operator<<`（含 `DFATAL`、`.no_prefix()`） |
 | `XPLOG` | `XLOG` + CRT `errno` 后缀（非 Win32 `GetLastError`） |
 | `XVLOG(n)` / `DXVLOG(n)` | **INFO**，`n <= verbosity()`（`XVLOG_IS_ON`）；前缀标 `Vn` |
+| `TVLOG` / `DTVLOG` | fmt 详细 INFO（门控同 `XVLOG`） |
+| `ZVLOG` / `DZVLOG` | printf 详细 INFO（门控同 `XVLOG`） |
 | `TLOG` / `DTLOG` | `fmt::format`（`print`） |
 | `ZLOG` / `DZLOG` | printf（`fmt::sprintf`） |
 | `XCHECK*` / `DXCHECK*` | 致命检查 |
@@ -48,8 +50,8 @@ int main() {
 - `XLOG_MAX_VLOG_VERBOSITY=<n>` — 编译期裁掉高于 `n` 的 `XVLOG`
 
 **详细日志：** `XVLOG` 固定 INFO（不用 DEBUG/TRACE）。运行时只看
-`set_verbosity(n)`（无 vmodule）。另有 `XVLOG_EVERY_N` / `FIRST_N` / `ONCE` /
-`EVERY_POW_2` / `EVERY_N_SEC`（及 `DXVLOG_*`）。
+`set_verbosity(n)`（无 vmodule）。`XVLOG` / `TVLOG` / `ZVLOG` 均有
+`EVERY_N` / `FIRST_N` / `ONCE` / `EVERY_POW_2` / `EVERY_N_SEC`（及 `D*`）。
 
 **前缀：** 全局 `set_log_with_prefix` / `set_utc`，或单条 `XLOG(INFO).no_prefix()`。
 

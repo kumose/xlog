@@ -191,6 +191,276 @@
                     static_cast<uint32_t>(xlog_internal_verbose_level))
 #endif
 
+// TVLOG — TLOG-style (.print) at INFO, gated by XVLOG_IS_ON.
+#define XLOG_INTERNAL_TVLOG_IMPL(verbose_level, ...)                        \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATELESS, XVLOG_IS_ON(xlog_internal_verbose_level))            \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .print(__VA_ARGS__)
+
+#ifndef NDEBUG
+#define XLOG_INTERNAL_DTVLOG_IMPL(verbose_level, ...)                       \
+    XLOG_INTERNAL_TVLOG_IMPL(verbose_level, __VA_ARGS__)
+#else
+#define XLOG_INTERNAL_DTVLOG_IMPL(verbose_level, ...)                       \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATELESS, false && XVLOG_IS_ON(xlog_internal_verbose_level))   \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .print(__VA_ARGS__)
+#endif
+
+#define XLOG_INTERNAL_TVLOG_EVERY_N_IMPL(verbose_level, n, ...)             \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, XVLOG_IS_ON(xlog_internal_verbose_level))             \
+        (EveryN, n)                                                         \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .print(__VA_ARGS__)
+
+#define XLOG_INTERNAL_TVLOG_FIRST_N_IMPL(verbose_level, n, ...)             \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, XVLOG_IS_ON(xlog_internal_verbose_level))             \
+        (FirstN, n)                                                         \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .print(__VA_ARGS__)
+
+#define XLOG_INTERNAL_TVLOG_EVERY_POW_2_IMPL(verbose_level, ...)            \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, XVLOG_IS_ON(xlog_internal_verbose_level))             \
+        (EveryPow2)                                                         \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .print(__VA_ARGS__)
+
+#define XLOG_INTERNAL_TVLOG_EVERY_N_SEC_IMPL(verbose_level, n_seconds, ...) \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, XVLOG_IS_ON(xlog_internal_verbose_level))             \
+        (EveryNSec, n_seconds)                                              \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .print(__VA_ARGS__)
+
+#ifndef NDEBUG
+#define XLOG_INTERNAL_DTVLOG_EVERY_N_IMPL(verbose_level, n, ...)            \
+    XLOG_INTERNAL_TVLOG_EVERY_N_IMPL(verbose_level, n, __VA_ARGS__)
+#define XLOG_INTERNAL_DTVLOG_FIRST_N_IMPL(verbose_level, n, ...)            \
+    XLOG_INTERNAL_TVLOG_FIRST_N_IMPL(verbose_level, n, __VA_ARGS__)
+#define XLOG_INTERNAL_DTVLOG_EVERY_POW_2_IMPL(verbose_level, ...)           \
+    XLOG_INTERNAL_TVLOG_EVERY_POW_2_IMPL(verbose_level, __VA_ARGS__)
+#define XLOG_INTERNAL_DTVLOG_EVERY_N_SEC_IMPL(verbose_level, n_seconds,     \
+                                              ...)                          \
+    XLOG_INTERNAL_TVLOG_EVERY_N_SEC_IMPL(verbose_level, n_seconds,          \
+                                         __VA_ARGS__)
+#else
+#define XLOG_INTERNAL_DTVLOG_EVERY_N_IMPL(verbose_level, n, ...)            \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, false && XVLOG_IS_ON(xlog_internal_verbose_level))    \
+        (EveryN, n)                                                         \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .print(__VA_ARGS__)
+#define XLOG_INTERNAL_DTVLOG_FIRST_N_IMPL(verbose_level, n, ...)            \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, false && XVLOG_IS_ON(xlog_internal_verbose_level))    \
+        (FirstN, n)                                                         \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .print(__VA_ARGS__)
+#define XLOG_INTERNAL_DTVLOG_EVERY_POW_2_IMPL(verbose_level, ...)           \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, false && XVLOG_IS_ON(xlog_internal_verbose_level))    \
+        (EveryPow2)                                                         \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .print(__VA_ARGS__)
+#define XLOG_INTERNAL_DTVLOG_EVERY_N_SEC_IMPL(verbose_level, n_seconds,     \
+                                              ...)                          \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, false && XVLOG_IS_ON(xlog_internal_verbose_level))    \
+        (EveryNSec, n_seconds)                                              \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .print(__VA_ARGS__)
+#endif
+
+// ZVLOG — ZLOG-style (.printf) at INFO, gated by XVLOG_IS_ON.
+#define XLOG_INTERNAL_ZVLOG_IMPL(verbose_level, ...)                        \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATELESS, XVLOG_IS_ON(xlog_internal_verbose_level))            \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .printf(__VA_ARGS__)
+
+#ifndef NDEBUG
+#define XLOG_INTERNAL_DZVLOG_IMPL(verbose_level, ...)                       \
+    XLOG_INTERNAL_ZVLOG_IMPL(verbose_level, __VA_ARGS__)
+#else
+#define XLOG_INTERNAL_DZVLOG_IMPL(verbose_level, ...)                       \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATELESS, false && XVLOG_IS_ON(xlog_internal_verbose_level))   \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .printf(__VA_ARGS__)
+#endif
+
+#define XLOG_INTERNAL_ZVLOG_EVERY_N_IMPL(verbose_level, n, ...)             \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, XVLOG_IS_ON(xlog_internal_verbose_level))             \
+        (EveryN, n)                                                         \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .printf(__VA_ARGS__)
+
+#define XLOG_INTERNAL_ZVLOG_FIRST_N_IMPL(verbose_level, n, ...)             \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, XVLOG_IS_ON(xlog_internal_verbose_level))             \
+        (FirstN, n)                                                         \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .printf(__VA_ARGS__)
+
+#define XLOG_INTERNAL_ZVLOG_EVERY_POW_2_IMPL(verbose_level, ...)            \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, XVLOG_IS_ON(xlog_internal_verbose_level))             \
+        (EveryPow2)                                                         \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .printf(__VA_ARGS__)
+
+#define XLOG_INTERNAL_ZVLOG_EVERY_N_SEC_IMPL(verbose_level, n_seconds, ...) \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, XVLOG_IS_ON(xlog_internal_verbose_level))             \
+        (EveryNSec, n_seconds)                                              \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .printf(__VA_ARGS__)
+
+#ifndef NDEBUG
+#define XLOG_INTERNAL_DZVLOG_EVERY_N_IMPL(verbose_level, n, ...)            \
+    XLOG_INTERNAL_ZVLOG_EVERY_N_IMPL(verbose_level, n, __VA_ARGS__)
+#define XLOG_INTERNAL_DZVLOG_FIRST_N_IMPL(verbose_level, n, ...)            \
+    XLOG_INTERNAL_ZVLOG_FIRST_N_IMPL(verbose_level, n, __VA_ARGS__)
+#define XLOG_INTERNAL_DZVLOG_EVERY_POW_2_IMPL(verbose_level, ...)           \
+    XLOG_INTERNAL_ZVLOG_EVERY_POW_2_IMPL(verbose_level, __VA_ARGS__)
+#define XLOG_INTERNAL_DZVLOG_EVERY_N_SEC_IMPL(verbose_level, n_seconds,     \
+                                              ...)                          \
+    XLOG_INTERNAL_ZVLOG_EVERY_N_SEC_IMPL(verbose_level, n_seconds,          \
+                                         __VA_ARGS__)
+#else
+#define XLOG_INTERNAL_DZVLOG_EVERY_N_IMPL(verbose_level, n, ...)            \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, false && XVLOG_IS_ON(xlog_internal_verbose_level))    \
+        (EveryN, n)                                                         \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .printf(__VA_ARGS__)
+#define XLOG_INTERNAL_DZVLOG_FIRST_N_IMPL(verbose_level, n, ...)            \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, false && XVLOG_IS_ON(xlog_internal_verbose_level))    \
+        (FirstN, n)                                                         \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .printf(__VA_ARGS__)
+#define XLOG_INTERNAL_DZVLOG_EVERY_POW_2_IMPL(verbose_level, ...)           \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, false && XVLOG_IS_ON(xlog_internal_verbose_level))    \
+        (EveryPow2)                                                         \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .printf(__VA_ARGS__)
+#define XLOG_INTERNAL_DZVLOG_EVERY_N_SEC_IMPL(verbose_level, n_seconds,     \
+                                              ...)                          \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_CONDITION_INFO(                                       \
+            STATEFUL, false && XVLOG_IS_ON(xlog_internal_verbose_level))    \
+        (EveryNSec, n_seconds)                                              \
+            XLOG_LOGGING_INTERNAL_LOG_INFO                                  \
+                .with_verbosity(                                            \
+                    static_cast<uint32_t>(xlog_internal_verbose_level))     \
+                .printf(__VA_ARGS__)
+#endif
+
 #define XLOG_INTERNAL_LOG_EVERY_N_IMPL(severity, n)            \
     XLOG_INTERNAL_CONDITION##severity(STATEFUL, true)(EveryN, n) \
         XLOG_LOGGING_INTERNAL_LOG##severity.internal_stream()

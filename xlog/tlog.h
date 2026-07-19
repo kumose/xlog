@@ -15,6 +15,7 @@
 // fmt-style logging macros (TLOG → LogMessage::print).
 //
 //   TLOG(INFO, "Found {} cookies", n);
+//   TVLOG(2, "verbose {}", n);   // INFO if verbosity >= 2
 //   TLOG_IF(WARNING, n > 10, "lots {}", n);
 //   TLOG_EVERY_N(ERROR, 100, "again {}", COUNTER);
 //   TLOG(LEVEL(sev), "dynamic {}", x);
@@ -25,6 +26,35 @@
 
 #define TLOG(severity, ...) XLOG_INTERNAL_TLOG_IMPL(_##severity, __VA_ARGS__)
 #define DTLOG(severity, ...) XLOG_INTERNAL_DTLOG_IMPL(_##severity, __VA_ARGS__)
+
+// TVLOG(n, ...) — fmt verbose INFO (same gates as XVLOG).
+#define TVLOG(verbose_level, ...) \
+    XLOG_INTERNAL_TVLOG_IMPL(verbose_level, __VA_ARGS__)
+#define DTVLOG(verbose_level, ...) \
+    XLOG_INTERNAL_DTVLOG_IMPL(verbose_level, __VA_ARGS__)
+
+#define TVLOG_EVERY_N(verbose_level, n, ...) \
+    XLOG_INTERNAL_TVLOG_EVERY_N_IMPL(verbose_level, n, __VA_ARGS__)
+#define TVLOG_FIRST_N(verbose_level, n, ...) \
+    XLOG_INTERNAL_TVLOG_FIRST_N_IMPL(verbose_level, n, __VA_ARGS__)
+#define TVLOG_ONCE(verbose_level, ...) \
+    XLOG_INTERNAL_TVLOG_FIRST_N_IMPL(verbose_level, 1, __VA_ARGS__)
+#define TVLOG_EVERY_POW_2(verbose_level, ...) \
+    XLOG_INTERNAL_TVLOG_EVERY_POW_2_IMPL(verbose_level, __VA_ARGS__)
+#define TVLOG_EVERY_N_SEC(verbose_level, n_seconds, ...) \
+    XLOG_INTERNAL_TVLOG_EVERY_N_SEC_IMPL(verbose_level, n_seconds, __VA_ARGS__)
+
+#define DTVLOG_EVERY_N(verbose_level, n, ...) \
+    XLOG_INTERNAL_DTVLOG_EVERY_N_IMPL(verbose_level, n, __VA_ARGS__)
+#define DTVLOG_FIRST_N(verbose_level, n, ...) \
+    XLOG_INTERNAL_DTVLOG_FIRST_N_IMPL(verbose_level, n, __VA_ARGS__)
+#define DTVLOG_ONCE(verbose_level, ...) \
+    XLOG_INTERNAL_DTVLOG_FIRST_N_IMPL(verbose_level, 1, __VA_ARGS__)
+#define DTVLOG_EVERY_POW_2(verbose_level, ...) \
+    XLOG_INTERNAL_DTVLOG_EVERY_POW_2_IMPL(verbose_level, __VA_ARGS__)
+#define DTVLOG_EVERY_N_SEC(verbose_level, n_seconds, ...) \
+    XLOG_INTERNAL_DTVLOG_EVERY_N_SEC_IMPL(verbose_level, n_seconds, \
+                                          __VA_ARGS__)
 
 #define TLOG_IF(severity, condition, ...) \
     XLOG_INTERNAL_TLOG_IF_IMPL(_##severity, condition, __VA_ARGS__)

@@ -165,6 +165,52 @@ namespace {
         }
     }
 
+    TEST_F(LogApiExtensionTest, TvlogEnabled) {
+        xlog::set_verbosity(2);
+        ScopedMockLog log(MockLogDefault::kDisallowUnexpected);
+        EXPECT_CALL(log, Send(AllOf(Severity(Eq(LogSeverity::kSeverityInfo)),
+                                    TextMessage(Eq("fmt 7")),
+                                    FormattedMessage(HasSubstr(" V2]")))));
+        log.StartCapturingLogs();
+        TVLOG(2, "fmt {}", 7);
+    }
+
+    TEST_F(LogApiExtensionTest, TvlogGated) {
+        ScopedMockLog log(MockLogDefault::kDisallowUnexpected);
+        EXPECT_CALL(log, Log).Times(0);
+        log.StartCapturingLogs();
+        TVLOG(3, "hidden {}", 1);
+    }
+
+    TEST_F(LogApiExtensionTest, ZvlogEnabled) {
+        xlog::set_verbosity(1);
+        ScopedMockLog log(MockLogDefault::kDisallowUnexpected);
+        EXPECT_CALL(log, Send(AllOf(Severity(Eq(LogSeverity::kSeverityInfo)),
+                                    TextMessage(Eq("printf 9")))));
+        log.StartCapturingLogs();
+        ZVLOG(1, "printf %d", 9);
+    }
+
+    TEST_F(LogApiExtensionTest, TvlogEveryN) {
+        xlog::set_verbosity(1);
+        ScopedMockLog log(MockLogDefault::kDisallowUnexpected);
+        EXPECT_CALL(log, Log(LogSeverity::kSeverityInfo, _, _)).Times(3);
+        log.StartCapturingLogs();
+        for (int i = 0; i < 7; ++i) {
+            TVLOG_EVERY_N(1, 3, "t={}", COUNTER);
+        }
+    }
+
+    TEST_F(LogApiExtensionTest, ZvlogEveryN) {
+        xlog::set_verbosity(1);
+        ScopedMockLog log(MockLogDefault::kDisallowUnexpected);
+        EXPECT_CALL(log, Log(LogSeverity::kSeverityInfo, _, _)).Times(3);
+        log.StartCapturingLogs();
+        for (int i = 0; i < 7; ++i) {
+            ZVLOG_EVERY_N(1, 3, "z=%u", COUNTER);
+        }
+    }
+
     TEST_F(LogApiExtensionTest, PlogAppendsErrno) {
         ScopedMockLog log(MockLogDefault::kDisallowUnexpected);
         errno = ENOENT;
