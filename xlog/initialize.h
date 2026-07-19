@@ -15,25 +15,32 @@
 
 #pragma once
 
-#include <fmt/format.h>
-#include <string>
-#include <string_view>
 #include <xlog/log_severity.h>
-#include <chrono>
+#include <string>
+#include <shared_mutex>
 
 namespace xlog {
-    struct LogEntry {
-        std::string_view filename;
-        int line{0};
-        LogSeverity log_severity;
-        std::string_view thread_identify;
-        uint64_t pid{0};
-        uint64_t tid{0};
-        fmt::memory_buffer buffer;
-        std::string stack_trace;
-        uint32_t verbose_level{0};
-        std::chrono::time_point<std::chrono::system_clock> timestamp;
+    struct LogConfig {
+        static LogConfig &instance() {
+            static LogConfig config;
+            return config;
+        }
 
-        fmt::memory_buffer format_buffer;
+        std::shared_mutex log_mutex;
+        LogSeverity stderr_threshold;
+        LogSeverity min_log_level;
+
+        bool log_with_prefix{true};
+        bool log_truncate{false};
+        int verbosity{0};
+        std::string log_base_filename;
+
+        bool utc{false};
+        bool initialized{false};
+        std::string app_name;
     };
+
+    LogSeverity stderr_threshold();
+
+    bool is_initialized();
 } // namespace xlog

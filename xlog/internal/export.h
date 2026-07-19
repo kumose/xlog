@@ -15,25 +15,26 @@
 
 #pragma once
 
-#include <fmt/format.h>
-#include <string>
-#include <string_view>
-#include <xlog/log_severity.h>
-#include <chrono>
+#if defined(_WIN32) || defined(__CYGWIN__)
+#  if defined(XLOG_EXPORTS)
+#    define XLOG_EXPORT __declspec(dllexport)
+#  else
+#    define XLOG_EXPORT __declspec(dllimport)
+#  endif
+#  define XLOG_NO_EXPORT
+#else
+#  if defined(XLOG_EXPORTS)
+#    define XLOG_EXPORT __attribute__((visibility("default")))
+#  else
+#    define XLOG_EXPORT
+#  endif
+#  define XLOG_NO_EXPORT __attribute__((visibility("hidden")))
+#endif
 
-namespace xlog {
-    struct LogEntry {
-        std::string_view filename;
-        int line{0};
-        LogSeverity log_severity;
-        std::string_view thread_identify;
-        uint64_t pid{0};
-        uint64_t tid{0};
-        fmt::memory_buffer buffer;
-        std::string stack_trace;
-        uint32_t verbose_level{0};
-        std::chrono::time_point<std::chrono::system_clock> timestamp;
-
-        fmt::memory_buffer format_buffer;
-    };
-} // namespace xlog
+#if defined(__GNUC__) || defined(__clang__)
+#  define XLOG_DEPRECATED __attribute__((deprecated))
+#elif defined(_MSC_VER)
+#  define XLOG_DEPRECATED __declspec(deprecated)
+#else
+#  define XLOG_DEPRECATED
+#endif

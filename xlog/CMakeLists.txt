@@ -21,7 +21,13 @@ kmcmake_cc_library(
         NAME xlog
         SOURCES
         internal/fnmatch.cc
+        internal/log_message.cc
+        sinks/default_sink.cc
+        format.cc
         log_sink.cc
+        log_sink_set.cc
+        initialize.cc
+        utility.cc
         CXXOPTS
         ${KMCMAKE_CXX_OPTIONS}
         PLINKS
