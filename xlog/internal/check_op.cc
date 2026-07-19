@@ -74,6 +74,26 @@ namespace log_internal {
         }
     }
 
+    void MakeCheckOpValueString(std::ostream &os, const char *p) {
+        if (p == nullptr) {
+            os << "(null)";
+        } else {
+            os << p;
+        }
+    }
+
+    void MakeCheckOpValueString(std::ostream &os, const signed char *p) {
+        MakeCheckOpValueString(os, reinterpret_cast<const char *>(p));
+    }
+
+    void MakeCheckOpValueString(std::ostream &os, const unsigned char *p) {
+        MakeCheckOpValueString(os, reinterpret_cast<const char *>(p));
+    }
+
+    void MakeCheckOpValueString(std::ostream &os, std::nullptr_t) {
+        os << "(null)";
+    }
+
 #define XLOG_DEFINE_CHECK_STROP_IMPL(func, expected)                         \
     std::string *Check##func##expected##Impl(const char *s1, const char *s2, \
                                              const char *exprtext) {         \

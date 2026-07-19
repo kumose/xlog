@@ -58,7 +58,11 @@ namespace xlog {
             return s_log_sink_registry;
         }
 
+        // Owns `sink` for the process lifetime (no remove).
         uint32_t add_log_sink(std::unique_ptr<LogSink> sink);
+
+        // Non-owning set (for tests / externally managed sinks).
+        uint32_t add_log_sinks(const std::vector<LogSink *> &sinks);
 
         bool set_default(uint32_t sink_id);
 
@@ -68,6 +72,8 @@ namespace xlog {
 
         LogSinkSet *default_sink_set() const;
 
+        uint32_t default_sink_id() const;
+
     private:
         LogSinkRegistry();
 
@@ -75,6 +81,7 @@ namespace xlog {
 
     private:
         LogSinkSet *_default_sink{nullptr};
+        uint32_t _default_id{0};
         std::mutex _sink_set_mutex;
         std::unordered_map<uint32_t, std::unique_ptr<LogSinkSet> > _sink_sets;
         uint32_t _seq_no{0};

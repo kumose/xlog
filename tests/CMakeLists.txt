@@ -13,11 +13,30 @@
 # limitations under the License.
 #
 
-
-
 configure_file(${PROJECT_SOURCE_DIR}/tests/config.h.in ${PROJECT_SOURCE_DIR}/tests/config.h @ONLY)
 
 find_package(GTest REQUIRED)
+
+kmcmake_cc_library(
+        NAMESPACE xlog
+        NAME test_support
+        SOURCES
+        scoped_mock_log.cc
+        test_helpers.cc
+        test_matchers.cc
+        LINKS
+        xlog::xlog_static
+        GTest::gtest
+        GTest::gmock
+        ${KMCMAKE_DEPS_LINK}
+        PLINKS
+        xlog::xlog_static
+        GTest::gtest
+        GTest::gmock
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+)
+
 kmcmake_cc_test(
         NAME fnmatch_test
         MODULE base
@@ -29,3 +48,64 @@ kmcmake_cc_test(
         xlog::xlog_static
         ${KMCMAKE_DEPS_LINK}
 )
+
+kmcmake_cc_test(
+        NAME scoped_mock_log_test
+        MODULE log
+        SOURCES scoped_mock_log_test.cc
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+        LINKS
+        GTest::gtest
+        GTest::gmock
+        xlog::test_support_static
+        xlog::xlog_static
+        ${KMCMAKE_DEPS_LINK}
+)
+
+kmcmake_cc_test(
+        NAME log_basic_test
+        MODULE log
+        SOURCES log_basic_test.cc
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+        LINKS
+        GTest::gtest
+        GTest::gmock
+        xlog::test_support_static
+        xlog::xlog_static
+        ${KMCMAKE_DEPS_LINK}
+)
+
+kmcmake_cc_test(
+        NAME check_test
+        MODULE log
+        SOURCES check_test.cc
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+        LINKS
+        GTest::gtest
+        GTest::gmock
+        xlog::test_support_static
+        xlog::xlog_static
+        ${KMCMAKE_DEPS_LINK}
+)
+
+set(XLOG_LOG_TESTS
+        log_format_test
+        log_sink_test
+        log_conditions_test
+        log_modifier_methods_test
+)
+
+foreach (test ${XLOG_LOG_TESTS})
+    kmcmake_cc_test(
+            NAME ${test}
+            MODULE log
+            SOURCES ${test}.cc
+            CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+            LINKS
+            GTest::gtest
+            GTest::gmock
+            xlog::test_support_static
+            xlog::xlog_static
+            ${KMCMAKE_DEPS_LINK}
+    )
+endforeach ()

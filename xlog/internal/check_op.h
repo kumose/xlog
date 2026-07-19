@@ -98,6 +98,10 @@ namespace log_internal {
     void MakeCheckOpValueString(std::ostream &os, signed char v);
     void MakeCheckOpValueString(std::ostream &os, unsigned char v);
     void MakeCheckOpValueString(std::ostream &os, const void *p);
+    void MakeCheckOpValueString(std::ostream &os, const char *p);
+    void MakeCheckOpValueString(std::ostream &os, const signed char *p);
+    void MakeCheckOpValueString(std::ostream &os, const unsigned char *p);
+    void MakeCheckOpValueString(std::ostream &os, std::nullptr_t);
 
     template <typename T1, typename T2>
     std::string *MakeCheckOpString(T1 v1, T2 v2, const char *exprtext) {
