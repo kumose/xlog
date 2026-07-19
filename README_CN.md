@@ -99,3 +99,11 @@ make -j$(nproc)
 ```shell
 ctest --test-dir build
 ```
+
+### 4. 示例(可选)
+
+```shell
+cmake -DKMCMAKE_BUILD_EXAMPLES=ON -B build
+cmake --build build --target foo_ex
+./build/examples/foo_ex
+```

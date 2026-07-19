@@ -100,3 +100,11 @@ Run in the project root directory:
 ```shell
 ctest --test-dir build
 ```
+
+### 4. Example (Optional)
+
+```shell
+cmake -DKMCMAKE_BUILD_EXAMPLES=ON -B build
+cmake --build build --target foo_ex
+./build/examples/foo_ex
+```
