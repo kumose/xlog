@@ -28,10 +28,10 @@ if (not_top)
     set(${PROJECT_NAME}_IS_TOP_PROJECT OFF)
 endif ()
 
-set(PROJECT_DESCRIPTION "xlog is a C++ logging library with stream, fmt, and printf macros, unified runtime filtering, rich sinks and formatters, and optional header-only upstream adapters for glog, turbo, and abseil.")
+set(PROJECT_DESCRIPTION "Hercules is an ahead of time compiler for a subset of the Python language framework.")
 set(PROJECT_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MINOR 4)
-set(PROJECT_VERSION_PATCH 0)
+set(PROJECT_VERSION_MINOR 0)
+set(PROJECT_VERSION_PATCH 5)
 set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 set(${PROJECT_NAME}_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
@@ -42,7 +42,7 @@ set(${PROJECT_NAME}_VERSION ${PROJECT_VERSION})
 string(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UP)
 
 option(PYTHON_EXTENSION "kmcmake set build shared library or not" OFF)
-set(KMCMAKE_VERSION 1.4.0)
+set(KMCMAKE_VERSION 1.4.2)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/kmcmake)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/kmcmake/tools)
@@ -91,13 +91,7 @@ if(NOT PYTHON_EXTENSION)
     ##############################################
     # header installing
     #############################################
-    install(DIRECTORY ${PROJECT_NAME}
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-            FILES_MATCHING
-            PATTERN "*.inc"
-            PATTERN "*.h"
-            PATTERN "*.hpp"
-            )
+    include(xlog_install_header)
 
     # Layout. This works for all platforms:
     #   * <prefix>//cmake/<PROJECT-NAME>
@@ -132,6 +126,13 @@ if(NOT PYTHON_EXTENSION)
             "${project_config}"
             INSTALL_DESTINATION "${config_install_dir}"
     )
+
+    #Targets:
+    #  * <prefix>/${CMAKE_INSTALL_LIBDIR}/libbar.a
+    #  * <prefix>/${CMAKE_INSTALL_LIBDIR}/libbaz.a
+    #  * header location after install: <prefix>/include/foo/Bar.hpp
+    #  * headers can be included by C++ code `#include <foo/Bar.hpp>`
+
 
     # Config
     #   * <prefix>/${CMAKE_INSTALL_LIBDIR}/cmake/Foo/FooConfig.cmake

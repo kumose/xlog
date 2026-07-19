@@ -15,11 +15,23 @@
 
 #pragma once
 
+#include <fmt/format.h>
 #include <string>
+#include <string_view>
+#include <xlog/log_severity.h>
+#include <chrono>
 
-namespace testing {
-
-    inline std::string benchmark_root() {
-        return "@PROJECT_SOURCE_DIR@/benchmark";
-    }
-}  // namespace testing
+namespace xlog {
+    struct LogEntry {
+        std::string_view filename;
+        int line{0};
+        LogSeverity severity;
+        std::string_view thread_identify;
+        uint64_t pid{0};
+        uint64_t tid{0};
+        fmt::memory_buffer buffer;
+        std::string stack_trace;
+        uint32_t verbose_level{0};
+        std::chrono::time_point<std::chrono::steady_clock> timestamp;
+    };
+} // namespace xlog

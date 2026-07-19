@@ -15,34 +15,8 @@
 #
 
 kmcmake_cc_binary(
-        NAMESPACE ${PROJECT_NAME}
-        NAME demo
-        SOURCES
-        demo.cc
-        CXXOPTS
-        ${KMCMAKE_CXX_OPTIONS}
-        LINKS
-        ${PROJECT_NAME}::xlog
-        ${KMCMAKE_DEPS_LINK}
-        PUBLIC
+        NAME foo_ex
+        SOURCES foo_ex.cc
+        DEPS ${PROJECT_NAME}::foo ${KMCMAKE_DEPS_LINK}
+        COPTS ${KMCMAKE_CXX_OPTIONS}
 )
-
-kmcmake_cc_binary(
-        NAMESPACE ${PROJECT_NAME}
-        NAME demo_1
-        SOURCES
-        demo_1.cc
-        CXXOPTS
-        ${KMCMAKE_CXX_OPTIONS}
-        LINKS
-        ${PROJECT_NAME}::xlog
-        ${KMCMAKE_DEPS_LINK}
-        PUBLIC
-)
-
-# Upstream demos (turbo/glog/absl) require external packages not currently available.
-# Re-enable by installing the dependencies and uncommenting the section below.
-# find_package(turbo QUIET)
-# find_package(glog QUIET)
-# find_package(absl QUIET CONFIG)
-# ... (upstream demo targets follow)

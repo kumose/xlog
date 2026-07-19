@@ -13,13 +13,8 @@
 // limitations under the License.
 //
 
-#pragma once
+#include <xlog/log_severity.h>
 
-#include <string>
+namespace xlog {
 
-namespace testing {
-
-    inline std::string benchmark_root() {
-        return "@PROJECT_SOURCE_DIR@/benchmark";
-    }
-}  // namespace testing
+}  // namespace xlog

@@ -34,8 +34,6 @@ option(KMCMAKE_STATUS_PRINT "kmcmake print or not, default on" ON)
 
 option(KMCMAKE_INSTALL_LIB "avoid centos install to lib64" OFF)
 
-option(KMCMAKE_ENABLE_SHARE "enable shared library" OFF)
-
 # Runtime SIMD target level used by dispatch/config logic.
 # Valid values:
 #   NONE, SSE, SSE2, SSE3, SSSE3, SSE4_1, SSE4_2, AVX, AVX2, AVX512

@@ -1,10 +1,10 @@
-// Copyright (C) 2026 Kumo inc. and its affiliates. All Rights Reserved.
+// Copyright 2023 The titan-search Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,13 +13,9 @@
 // limitations under the License.
 //
 
-#pragma once
+#include <iostream>
+#include <xlog/foo.h>
 
-#include <string>
-
-namespace testing {
-
-    inline std::string benchmark_root() {
-        return "@PROJECT_SOURCE_DIR@/benchmark";
-    }
-}  // namespace testing
+int main() {
+    std::cout<<foo(41)<<std::endl;
+}

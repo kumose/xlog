@@ -15,11 +15,14 @@
 
 #pragma once
 
-#include <string>
+#include <string_view>
 
-namespace testing {
-
-    inline std::string benchmark_root() {
-        return "@PROJECT_SOURCE_DIR@/benchmark";
-    }
-}  // namespace testing
+namespace xlog::log_internal {
+    // Like POSIX `fnmatch`, but:
+    // * accepts `string_view`
+    // * does not allocate any dynamic memory
+    // * only supports * and ? wildcards and not bracket expressions [...]
+    // * wildcards may match /
+    // * no backslash-escaping
+    bool fn_match(std::string_view pattern, std::string_view str);
+} // namespace xlog::log_internal

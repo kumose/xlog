@@ -13,13 +13,10 @@
 // limitations under the License.
 //
 
-#pragma once
+#include <xlog/log_sink.h>
 
-#include <string>
+namespace xlog {
 
-namespace testing {
+    void LogSink::key_function() const {}
 
-    inline std::string benchmark_root() {
-        return "@PROJECT_SOURCE_DIR@/benchmark";
-    }
-}  // namespace testing
+}  // namespace xlog
