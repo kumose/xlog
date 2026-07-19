@@ -15,11 +15,12 @@
 
 #pragma once
 
-#include <xlog/log_severity.h>
-#include <string>
 #include <shared_mutex>
+#include <string>
+#include <xlog/log_severity.h>
 
 namespace xlog {
+
     struct LogConfig {
         static LogConfig &instance() {
             static LogConfig config;
@@ -27,8 +28,9 @@ namespace xlog {
         }
 
         std::shared_mutex log_mutex;
-        LogSeverity stderr_threshold;
-        LogSeverity min_log_level;
+
+        LogSeverity stderr_threshold{LogSeverity::kSeverityError};
+        LogSeverity min_log_level{LogSeverity::kSeverityInfo};
 
         bool log_with_prefix{true};
         bool log_truncate{false};
@@ -40,7 +42,23 @@ namespace xlog {
         std::string app_name;
     };
 
-    LogSeverity stderr_threshold();
+    // Sets defaults and marks the library initialized. Safe to call once;
+    // subsequent calls are no-ops.
+    void initialize_log();
 
     bool is_initialized();
-} // namespace xlog
+
+    LogSeverity stderr_threshold();
+    LogSeverity min_log_level();
+    int verbosity();
+    bool utc();
+    bool log_with_prefix();
+
+    void set_min_log_level(LogSeverity severity);
+    void set_stderr_threshold(LogSeverity severity);
+    void set_verbosity(int verbosity);
+    void set_utc(bool utc);
+    void set_log_with_prefix(bool enabled);
+    void set_app_name(std::string name);
+
+}  // namespace xlog

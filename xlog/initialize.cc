@@ -15,8 +15,97 @@
 
 #include <xlog/initialize.h>
 
+#include <mutex>
+#include <utility>
+
 namespace xlog {
-    LogSeverity stderr_threshold() {
-        return LogConfig::instance().stderr_threshold;
+
+    void initialize_log() {
+        auto &cfg = LogConfig::instance();
+        std::unique_lock<std::shared_mutex> lock(cfg.log_mutex);
+        if (cfg.initialized) {
+            return;
+        }
+
+        cfg.stderr_threshold = LogSeverity::kSeverityError;
+        cfg.min_log_level = LogSeverity::kSeverityInfo;
+        cfg.log_with_prefix = true;
+        cfg.log_truncate = false;
+        cfg.verbosity = 0;
+        cfg.utc = false;
+        cfg.initialized = true;
     }
-} // namespace xlog
+
+    bool is_initialized() {
+        auto &cfg = LogConfig::instance();
+        std::shared_lock<std::shared_mutex> lock(cfg.log_mutex);
+        return cfg.initialized;
+    }
+
+    LogSeverity stderr_threshold() {
+        auto &cfg = LogConfig::instance();
+        std::shared_lock<std::shared_mutex> lock(cfg.log_mutex);
+        return cfg.stderr_threshold;
+    }
+
+    LogSeverity min_log_level() {
+        auto &cfg = LogConfig::instance();
+        std::shared_lock<std::shared_mutex> lock(cfg.log_mutex);
+        return cfg.min_log_level;
+    }
+
+    int verbosity() {
+        auto &cfg = LogConfig::instance();
+        std::shared_lock<std::shared_mutex> lock(cfg.log_mutex);
+        return cfg.verbosity;
+    }
+
+    bool utc() {
+        auto &cfg = LogConfig::instance();
+        std::shared_lock<std::shared_mutex> lock(cfg.log_mutex);
+        return cfg.utc;
+    }
+
+    bool log_with_prefix() {
+        auto &cfg = LogConfig::instance();
+        std::shared_lock<std::shared_mutex> lock(cfg.log_mutex);
+        return cfg.log_with_prefix;
+    }
+
+    void set_min_log_level(LogSeverity severity) {
+        auto &cfg = LogConfig::instance();
+        std::unique_lock<std::shared_mutex> lock(cfg.log_mutex);
+        cfg.min_log_level = severity;
+    }
+
+    void set_stderr_threshold(LogSeverity severity) {
+        auto &cfg = LogConfig::instance();
+        std::unique_lock<std::shared_mutex> lock(cfg.log_mutex);
+        cfg.stderr_threshold = severity;
+    }
+
+    void set_verbosity(int verbosity) {
+        auto &cfg = LogConfig::instance();
+        std::unique_lock<std::shared_mutex> lock(cfg.log_mutex);
+        cfg.verbosity = verbosity;
+    }
+
+    void set_utc(bool utc) {
+        auto &cfg = LogConfig::instance();
+        std::unique_lock<std::shared_mutex> lock(cfg.log_mutex);
+        cfg.utc = utc;
+    }
+
+    void set_log_with_prefix(bool enabled) {
+        auto &cfg = LogConfig::instance();
+        std::unique_lock<std::shared_mutex> lock(cfg.log_mutex);
+        cfg.log_with_prefix = enabled;
+    }
+
+    void set_app_name(std::string name) {
+        auto &cfg = LogConfig::instance();
+        std::unique_lock<std::shared_mutex> lock(cfg.log_mutex);
+        cfg.app_name = std::move(name);
+    }
+
+}  // namespace xlog

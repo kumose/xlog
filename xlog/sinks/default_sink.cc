@@ -14,12 +14,28 @@
 //
 
 #include <xlog/initialize.h>
+#include <xlog/log_severity.h>
 #include <xlog/sinks/default_sink.h>
 #include <xlog/utility.h>
+
+#include <mutex>
 
 namespace xlog {
 
     void DefaultSink::send(const xlog::LogEntry &entry) {
-        write_to_stderr({entry.format_buffer.data(), entry.format_buffer.size()}, entry.log_severity);
+        static std::once_flag once;
+        std::call_once(once, [] {
+            if (is_initialized()) {
+                return;
+            }
+            write_to_stderr(
+                "WARNING: logging before initialize_log(); "
+                "calling initialize_log() and writing to STDERR\n",
+                LogSeverity::kSeverityWarning);
+            initialize_log();
+        });
+
+        write_to_stderr({entry.format_buffer.data(), entry.format_buffer.size()},
+                        entry.log_severity);
     }
 } // namespace xlog
