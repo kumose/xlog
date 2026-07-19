@@ -22,6 +22,7 @@ kmcmake_cc_library(
         SOURCES
         internal/fnmatch.cc
         internal/conditions.cc
+        internal/check_op.cc
         internal/log_message.cc
         sinks/default_sink.cc
         format.cc

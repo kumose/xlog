@@ -40,6 +40,9 @@ namespace xlog {
     public:
         LogMessage(const char *file, int line, LogSeverity severity);
 
+        // FATAL + prefix "Check failed: <failure_msg> " (for XCHECK*).
+        LogMessage(const char *file, int line, std::string_view failure_msg);
+
         LogMessage(const LogMessage &) = delete;
 
         LogMessage &operator=(const LogMessage &) = delete;

@@ -68,6 +68,12 @@ namespace xlog {
         _entry.timestamp = std::chrono::system_clock::now();
     }
 
+    LogMessage::LogMessage(const char *file, int line,
+                           std::string_view failure_msg)
+        : LogMessage(file, line, LogSeverity::kSeverityFatal) {
+        *this << "Check failed: " << failure_msg << " ";
+    }
+
     LogMessage::~LogMessage() { flush(); }
 
     LogMessage &LogMessage::at_location(std::string_view file, int line) {
@@ -127,17 +133,23 @@ namespace xlog {
         }
         _flushed = true;
 
+        const bool fatal =
+                _entry.log_severity == LogSeverity::kSeverityFatal;
         const auto &cfg = LogConfig::instance();
         if (!should_log(_entry.log_severity, cfg.min_log_level)) {
+            if (fatal) {
+                std::abort();
+            }
             return;
         }
         if (_entry.verbose_level > 0 &&
             static_cast<int>(_entry.verbose_level) > cfg.verbosity) {
+            if (fatal) {
+                std::abort();
+            }
             return;
         }
 
-        const bool fatal =
-                _entry.log_severity == LogSeverity::kSeverityFatal;
         log_to_sinks(std::move(_entry), _extra_sinks, _extra_sinks_only, fatal);
         if (fatal) {
             std::abort();
