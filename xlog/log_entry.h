@@ -16,7 +16,6 @@
 #pragma once
 
 #include <fmt/format.h>
-#include <string>
 #include <string_view>
 #include <xlog/log_severity.h>
 #include <chrono>
@@ -30,8 +29,8 @@ namespace xlog {
         uint64_t pid{0};
         uint64_t tid{0};
         fmt::memory_buffer buffer;
-        std::string stack_trace;
         uint32_t verbose_level{0};
+        bool prefix{true};  // false after LogMessage::no_prefix()
         std::chrono::time_point<std::chrono::system_clock> timestamp;
 
         fmt::memory_buffer format_buffer;

@@ -36,7 +36,11 @@ namespace xlog {
     public:
         NullStream &at_location(std::string_view, int) { return *this; }
 
+        NullStream &no_prefix() { return *this; }
+
         NullStream &with_verbosity(uint32_t) { return *this; }
+
+        NullStream &with_perror() { return *this; }
 
         template <typename LogSinkType>
         NullStream &to_sink_also(LogSinkType *) {

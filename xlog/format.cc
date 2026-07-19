@@ -157,7 +157,7 @@ void xlog_format(LogEntry &entry) {
     const auto &cfg = LogConfig::instance();
     const std::string_view msg(entry.buffer.data(), entry.buffer.size());
 
-    if (cfg.log_with_prefix) {
+    if (cfg.log_with_prefix && entry.prefix) {
         const auto tp = entry.timestamp;
         const auto secs = std::chrono::floor<std::chrono::seconds>(tp);
         const auto us = static_cast<unsigned>(

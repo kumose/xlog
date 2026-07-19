@@ -28,6 +28,13 @@ namespace xlog {
         kSeverityFatal = 5,
     };
 
+    // DFATAL: FATAL in debug builds, ERROR otherwise.
+#ifdef NDEBUG
+    inline constexpr LogSeverity kLogDebugFatal = LogSeverity::kSeverityError;
+#else
+    inline constexpr LogSeverity kLogDebugFatal = LogSeverity::kSeverityFatal;
+#endif
+
     static constexpr size_t kSeveritySize = 6;
 
 

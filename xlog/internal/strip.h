@@ -29,11 +29,14 @@
 #define XLOG_LOGGING_INTERNAL_LOG_WARNING ::xlog::NullStream()
 #define XLOG_LOGGING_INTERNAL_LOG_ERROR ::xlog::NullStream()
 #define XLOG_LOGGING_INTERNAL_LOG_FATAL ::xlog::NullStreamFatal()
+#define XLOG_LOGGING_INTERNAL_LOG_DFATAL \
+    ::xlog::NullStreamMaybeFatal(::xlog::kLogDebugFatal)
 #define XLOG_LOGGING_INTERNAL_LOG_LEVEL(severity) \
     ::xlog::NullStreamMaybeFatal(xlog_internal_severity)
 
 #define XLOG_LOGGING_INTERNAL_DLOG_FATAL \
     ::xlog::NullStreamMaybeFatal(::xlog::LogSeverity::kSeverityFatal)
+#define XLOG_LOGGING_INTERNAL_DLOG_DFATAL XLOG_LOGGING_INTERNAL_LOG_DFATAL
 
 #define XLOG_INTERNAL_CHECK(failure_message) XLOG_LOGGING_INTERNAL_LOG_FATAL
 
@@ -61,10 +64,13 @@
 #define XLOG_LOGGING_INTERNAL_LOG_FATAL                                   \
     ::xlog::LogMessage(__FILE__, __LINE__,                                \
                        ::xlog::LogSeverity::kSeverityFatal)
+#define XLOG_LOGGING_INTERNAL_LOG_DFATAL                                  \
+    ::xlog::LogMessage(__FILE__, __LINE__, ::xlog::kLogDebugFatal)
 #define XLOG_LOGGING_INTERNAL_LOG_LEVEL(severity) \
     ::xlog::LogMessage(__FILE__, __LINE__, xlog_internal_severity)
 
 #define XLOG_LOGGING_INTERNAL_DLOG_FATAL XLOG_LOGGING_INTERNAL_LOG_FATAL
+#define XLOG_LOGGING_INTERNAL_DLOG_DFATAL XLOG_LOGGING_INTERNAL_LOG_DFATAL
 
 #define XLOG_INTERNAL_CHECK(failure_message) \
     ::xlog::LogMessage(__FILE__, __LINE__, failure_message)

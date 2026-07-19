@@ -51,7 +51,13 @@ namespace xlog {
 
         LogMessage &at_location(std::string_view file, int line);
 
+        LogMessage &no_prefix();
+
         LogMessage &with_verbosity(uint32_t verbose_level);
+
+        // Append ": <strerror> [<errno>]" using CRT errno captured at
+        // construction (not Win32 GetLastError). Message via portable StrError.
+        LogMessage &with_perror();
 
         LogMessage &to_sink_also(LogSink *sink);
 
@@ -92,9 +98,12 @@ namespace xlog {
     private:
         void flush();
 
+        // First so construction captures errno before other side effects.
+        int _saved_errno;
         LogEntry _entry;
         std::vector<LogSink *> _extra_sinks;
         bool _extra_sinks_only{false};
+        bool _is_perror{false};
         bool _flushed{false};
     };
 

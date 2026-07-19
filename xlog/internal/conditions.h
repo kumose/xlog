@@ -89,6 +89,8 @@
                     ? true                                                   \
                     : (::xlog::log_internal::abort_quietly(), false))        \
              : false))
+#define XLOG_INTERNAL_CONDITION_DFATAL(type, condition)                      \
+    XLOG_INTERNAL_CONDITION_LEVEL(::xlog::kLogDebugFatal)(type, condition)
 #define XLOG_INTERNAL_CONDITION_LEVEL(severity)                               \
     for (int xlog_internal_severity_loop = 1; xlog_internal_severity_loop;     \
          xlog_internal_severity_loop = 0)                                     \
@@ -115,6 +117,8 @@
     XLOG_INTERNAL_##type##_CONDITION(condition)
 #define XLOG_INTERNAL_CONDITION_FATAL(type, condition) \
     XLOG_INTERNAL_##type##_CONDITION(condition)
+#define XLOG_INTERNAL_CONDITION_DFATAL(type, condition) \
+    XLOG_INTERNAL_CONDITION_LEVEL(::xlog::kLogDebugFatal)(type, condition)
 #define XLOG_INTERNAL_CONDITION_LEVEL(severity)                               \
     for (int xlog_internal_severity_loop = 1; xlog_internal_severity_loop;     \
          xlog_internal_severity_loop = 0)                                     \

@@ -32,7 +32,9 @@ int main() {
 
 | API | 风格 |
 |-----|------|
-| `XLOG` / `DXLOG` | `operator<<` |
+| `XLOG` / `DXLOG` | `operator<<`（含 `DFATAL`、`.no_prefix()`） |
+| `XPLOG` | `XLOG` + CRT `errno` 后缀（非 Win32 `GetLastError`） |
+| `XVLOG(n)` / `DXVLOG(n)` | 详细 INFO（`XVLOG_IS_ON`） |
 | `TLOG` / `DTLOG` | `fmt::format`（`print`） |
 | `ZLOG` / `DZLOG` | printf（`fmt::sprintf`） |
 | `XCHECK*` / `DXCHECK*` | 致命检查 |
@@ -44,7 +46,7 @@ int main() {
 - `XLOG_MIN_LOG_LEVEL=<int>` — 低于该 `LogSeverity` 的宏被短路（0=TRACE … 5=FATAL）
 - `XLOG_STRIP_LOG=1` — 非 FATAL 变为 `NullStream`；FATAL/CHECK 仍会终止进程
 
-**前缀：** 全局 `set_log_with_prefix` / `set_utc`；暂无单条 `.no_prefix()`。
+**前缀：** 全局 `set_log_with_prefix` / `set_utc`，或单条 `XLOG(INFO).no_prefix()`。
 
 ## 🛠️ Build
 

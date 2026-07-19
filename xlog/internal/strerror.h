@@ -12,22 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Umbrella header for typical application use:
-//
-//   #include <xlog/logging.h>
-//   xlog::initialize_log();
-//   XLOG(INFO) << "hello";
-//   XLOG(INFO).no_prefix() << "raw";
-//   XPLOG(ERROR) << "open failed";
-//   XVLOG(1) << "verbose";
-//   TLOG(INFO, "x={}", 1);
-//   ZLOG(INFO, "x=%d", 1);
-//   XCHECK(ptr != nullptr);
+// Portable, thread-safe CRT errno -> string (not Win32 GetLastError).
 
 #pragma once
 
-#include <xlog/check.h>
-#include <xlog/initialize.h>
-#include <xlog/tlog.h>
-#include <xlog/xlog.h>
-#include <xlog/zlog.h>
+#include <string>
+
+namespace xlog {
+namespace log_internal {
+
+    // Thread-safe alternative to strerror(3). Does not modify errno.
+    // Windows: strerror_s; POSIX (glibc/musl/bionic): strerror_r (XSI or GNU).
+    std::string StrError(int errnum);
+
+}  // namespace log_internal
+}  // namespace xlog

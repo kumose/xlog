@@ -15,6 +15,10 @@
 // Stream-style logging macros (XLOG).
 //
 //   XLOG(INFO) << "Found " << n << " cookies";
+//   XLOG(DFATAL) << "debug-fatal / release-error";
+//   XLOG(INFO).no_prefix() << "raw";
+//   XPLOG(ERROR) << "open failed";
+//   XVLOG(2) << "verbose";
 //   XLOG_IF(WARNING, n > 10) << "lots";
 //   XLOG_EVERY_N(ERROR, 100) << "again " << COUNTER;
 //   XLOG(LEVEL(sev)) << "dynamic severity";
@@ -25,11 +29,21 @@
 
 #include <xlog/internal/log_impl.h>
 
-// XLOG(severity) — severity is TRACE/DEBUG/INFO/WARNING/ERROR/FATAL or LEVEL(expr).
+// XLOG(severity) — TRACE/DEBUG/INFO/WARNING/ERROR/FATAL/DFATAL or LEVEL(expr).
 #define XLOG(severity) XLOG_INTERNAL_LOG_IMPL(_##severity)
 
 // DXLOG — same as XLOG in debug builds; compiles away under NDEBUG.
 #define DXLOG(severity) XLOG_INTERNAL_DLOG_IMPL(_##severity)
+
+// XPLOG — XLOG + ": strerror [errno]" (CRT errno at LogMessage ctor;
+// not Win32 GetLastError).
+#define XPLOG(severity) XLOG_INTERNAL_PLOG_IMPL(_##severity)
+#define XPLOG_IF(severity, condition) \
+    XLOG_INTERNAL_PLOG_IF_IMPL(_##severity, condition)
+
+// XVLOG(n) — INFO when XVLOG_IS_ON(n); attaches verbosity metadata.
+#define XVLOG(verbose_level) XLOG_INTERNAL_VLOG_IMPL(verbose_level)
+#define DXVLOG(verbose_level) XLOG_INTERNAL_DVLOG_IMPL(verbose_level)
 
 #define XLOG_IF(severity, condition) \
     XLOG_INTERNAL_LOG_IF_IMPL(_##severity, condition)

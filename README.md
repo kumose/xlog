@@ -32,7 +32,9 @@ int main() {
 
 | API | Style |
 |-----|--------|
-| `XLOG` / `DXLOG` | `operator<<` |
+| `XLOG` / `DXLOG` | `operator<<` (also `DFATAL`, `.no_prefix()`) |
+| `XPLOG` | `XLOG` + CRT `errno` suffix (not Win32 `GetLastError`) |
+| `XVLOG(n)` / `DXVLOG(n)` | verbose INFO (`XVLOG_IS_ON`) |
 | `TLOG` / `DTLOG` | `fmt::format` (`print`) |
 | `ZLOG` / `DZLOG` | printf (`fmt::sprintf`) |
 | `XCHECK*` / `DXCHECK*` | fatal checks |
@@ -45,8 +47,8 @@ There is no remove (hot path can use a raw `LogSinkSet*`).
 - `XLOG_MIN_LOG_LEVEL=<int>` — gate macros below that `LogSeverity` (0=TRACE … 5=FATAL)
 - `XLOG_STRIP_LOG=1` — non-fatal logs become `NullStream`; FATAL/CHECK still terminate
 
-**Prefix:** global `xlog::set_log_with_prefix(bool)` / `set_utc(bool)`.
-There is no per-statement `.no_prefix()` yet.
+**Prefix:** global `xlog::set_log_with_prefix(bool)` / `set_utc(bool)`,
+or per-statement `XLOG(INFO).no_prefix()`.
 
 ## 🛠️ Build
 

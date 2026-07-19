@@ -18,10 +18,18 @@
 #include <xlog/internal/conditions.h>
 #include <xlog/internal/strip.h>
 
+#include <xlog/initialize.h>
+
 // XLOG()
 #define XLOG_INTERNAL_LOG_IMPL(severity)             \
     XLOG_INTERNAL_CONDITION##severity(STATELESS, true) \
         XLOG_LOGGING_INTERNAL_LOG##severity.internal_stream()
+
+// XPLOG() — XLOG + errno suffix
+#define XLOG_INTERNAL_PLOG_IMPL(severity)              \
+    XLOG_INTERNAL_CONDITION##severity(STATELESS, true)  \
+        XLOG_LOGGING_INTERNAL_LOG##severity.internal_stream() \
+            .with_perror()
 
 // DXLOG()
 #ifndef NDEBUG
@@ -38,6 +46,11 @@
     XLOG_INTERNAL_CONDITION##severity(STATELESS, condition) \
         XLOG_LOGGING_INTERNAL_LOG##severity.internal_stream()
 
+#define XLOG_INTERNAL_PLOG_IF_IMPL(severity, condition)   \
+    XLOG_INTERNAL_CONDITION##severity(STATELESS, condition) \
+        XLOG_LOGGING_INTERNAL_LOG##severity.internal_stream() \
+            .with_perror()
+
 #ifndef NDEBUG
 #define XLOG_INTERNAL_DLOG_IF_IMPL(severity, condition)   \
     XLOG_INTERNAL_CONDITION##severity(STATELESS, condition) \
@@ -46,6 +59,39 @@
 #define XLOG_INTERNAL_DLOG_IF_IMPL(severity, condition)              \
     XLOG_INTERNAL_CONDITION##severity(STATELESS, false && (condition)) \
         XLOG_LOGGING_INTERNAL_DLOG##severity.internal_stream()
+#endif
+
+// XVLOG / DXVLOG — INFO gated by verbosity
+#ifdef XLOG_MAX_VLOG_VERBOSITY
+#define XVLOG_IS_ON(verbose_level)                                       \
+    ((verbose_level) <= (XLOG_MAX_VLOG_VERBOSITY) &&                     \
+     (verbose_level) <= ::xlog::verbosity())
+#else
+#define XVLOG_IS_ON(verbose_level) ((verbose_level) <= ::xlog::verbosity())
+#endif
+
+#define XLOG_INTERNAL_VLOG_IMPL(verbose_level)                              \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_LOG_IF_IMPL(_INFO, XVLOG_IS_ON(xlog_internal_verbose_level)) \
+            .with_verbosity(static_cast<uint32_t>(xlog_internal_verbose_level))
+
+#ifndef NDEBUG
+#define XLOG_INTERNAL_DVLOG_IMPL(verbose_level)                             \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_DLOG_IF_IMPL(_INFO, XVLOG_IS_ON(xlog_internal_verbose_level)) \
+            .with_verbosity(static_cast<uint32_t>(xlog_internal_verbose_level))
+#else
+#define XLOG_INTERNAL_DVLOG_IMPL(verbose_level)                             \
+    switch (const int xlog_internal_verbose_level = (verbose_level))        \
+    case 0:                                                                 \
+    default:                                                                \
+        XLOG_INTERNAL_DLOG_IF_IMPL(                                         \
+            _INFO, false && XVLOG_IS_ON(xlog_internal_verbose_level))       \
+            .with_verbosity(static_cast<uint32_t>(xlog_internal_verbose_level))
 #endif
 
 #define XLOG_INTERNAL_LOG_EVERY_N_IMPL(severity, n)            \

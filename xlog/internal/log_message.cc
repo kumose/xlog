@@ -15,8 +15,10 @@
 
 #include <xlog/internal/log_message.h>
 
+#include <cerrno>
 #include <cstdlib>
 #include <xlog/initialize.h>
+#include <xlog/internal/strerror.h>
 #include <xlog/log_sink_set.h>
 #include <xlog/utility.h>
 
@@ -58,7 +60,8 @@ namespace xlog {
         }
     } // namespace
 
-    LogMessage::LogMessage(const char *file, int line, LogSeverity severity) {
+    LogMessage::LogMessage(const char *file, int line, LogSeverity severity)
+        : _saved_errno(errno) {
         _entry.filename = file ? file : "";
         _entry.line = line;
         _entry.log_severity = severity;
@@ -82,8 +85,18 @@ namespace xlog {
         return *this;
     }
 
+    LogMessage &LogMessage::no_prefix() {
+        _entry.prefix = false;
+        return *this;
+    }
+
     LogMessage &LogMessage::with_verbosity(uint32_t verbose_level) {
         _entry.verbose_level = verbose_level;
+        return *this;
+    }
+
+    LogMessage &LogMessage::with_perror() {
+        _is_perror = true;
         return *this;
     }
 
@@ -132,6 +145,14 @@ namespace xlog {
             return;
         }
         _flushed = true;
+
+        if (_is_perror) {
+            // CRT errno only (not Win32 GetLastError). Thread-safe on
+            // Windows / musl / bionic / glibc via log_internal::StrError.
+            fmt::format_to(std::back_inserter(_entry.buffer), ": {} [{}]",
+                           log_internal::StrError(_saved_errno),
+                           _saved_errno);
+        }
 
         const bool fatal =
                 _entry.log_severity == LogSeverity::kSeverityFatal;
