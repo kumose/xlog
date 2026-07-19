@@ -18,7 +18,8 @@
 //   XLOG(DFATAL) << "debug-fatal / release-error";
 //   XLOG(INFO).no_prefix() << "raw";
 //   XPLOG(ERROR) << "open failed";
-//   XVLOG(2) << "verbose";
+//   XVLOG(2) << "verbose";              // INFO if verbosity >= 2
+//   XVLOG_EVERY_N(2, 100) << "again " << COUNTER;
 //   XLOG_IF(WARNING, n > 10) << "lots";
 //   XLOG_EVERY_N(ERROR, 100) << "again " << COUNTER;
 //   XLOG(LEVEL(sev)) << "dynamic severity";
@@ -41,9 +42,32 @@
 #define XPLOG_IF(severity, condition) \
     XLOG_INTERNAL_PLOG_IF_IMPL(_##severity, condition)
 
-// XVLOG(n) — INFO when XVLOG_IS_ON(n); attaches verbosity metadata.
+// XVLOG(n) — severity INFO when XVLOG_IS_ON(n); attaches verbosity metadata.
+// Gate: n <= xlog::verbosity() (and optional XLOG_MAX_VLOG_VERBOSITY).
+// No XVLOG_IF (argument evaluation order). No vmodule.
 #define XVLOG(verbose_level) XLOG_INTERNAL_VLOG_IMPL(verbose_level)
 #define DXVLOG(verbose_level) XLOG_INTERNAL_DVLOG_IMPL(verbose_level)
+
+#define XVLOG_EVERY_N(verbose_level, n) \
+    XLOG_INTERNAL_VLOG_EVERY_N_IMPL(verbose_level, n)
+#define XVLOG_FIRST_N(verbose_level, n) \
+    XLOG_INTERNAL_VLOG_FIRST_N_IMPL(verbose_level, n)
+#define XVLOG_ONCE(verbose_level) XLOG_INTERNAL_VLOG_FIRST_N_IMPL(verbose_level, 1)
+#define XVLOG_EVERY_POW_2(verbose_level) \
+    XLOG_INTERNAL_VLOG_EVERY_POW_2_IMPL(verbose_level)
+#define XVLOG_EVERY_N_SEC(verbose_level, n_seconds) \
+    XLOG_INTERNAL_VLOG_EVERY_N_SEC_IMPL(verbose_level, n_seconds)
+
+#define DXVLOG_EVERY_N(verbose_level, n) \
+    XLOG_INTERNAL_DVLOG_EVERY_N_IMPL(verbose_level, n)
+#define DXVLOG_FIRST_N(verbose_level, n) \
+    XLOG_INTERNAL_DVLOG_FIRST_N_IMPL(verbose_level, n)
+#define DXVLOG_ONCE(verbose_level) \
+    XLOG_INTERNAL_DVLOG_FIRST_N_IMPL(verbose_level, 1)
+#define DXVLOG_EVERY_POW_2(verbose_level) \
+    XLOG_INTERNAL_DVLOG_EVERY_POW_2_IMPL(verbose_level)
+#define DXVLOG_EVERY_N_SEC(verbose_level, n_seconds) \
+    XLOG_INTERNAL_DVLOG_EVERY_N_SEC_IMPL(verbose_level, n_seconds)
 
 #define XLOG_IF(severity, condition) \
     XLOG_INTERNAL_LOG_IF_IMPL(_##severity, condition)

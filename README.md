@@ -34,7 +34,7 @@ int main() {
 |-----|--------|
 | `XLOG` / `DXLOG` | `operator<<` (also `DFATAL`, `.no_prefix()`) |
 | `XPLOG` | `XLOG` + CRT `errno` suffix (not Win32 `GetLastError`) |
-| `XVLOG(n)` / `DXVLOG(n)` | verbose INFO (`XVLOG_IS_ON`) |
+| `XVLOG(n)` / `DXVLOG(n)` | **INFO** when `n <= verbosity()` (`XVLOG_IS_ON`); prefix marks `Vn` |
 | `TLOG` / `DTLOG` | `fmt::format` (`print`) |
 | `ZLOG` / `DZLOG` | printf (`fmt::sprintf`) |
 | `XCHECK*` / `DXCHECK*` | fatal checks |
@@ -46,6 +46,11 @@ There is no remove (hot path can use a raw `LogSinkSet*`).
 **Compile-time controls (optional):**
 - `XLOG_MIN_LOG_LEVEL=<int>` — gate macros below that `LogSeverity` (0=TRACE … 5=FATAL)
 - `XLOG_STRIP_LOG=1` — non-fatal logs become `NullStream`; FATAL/CHECK still terminate
+- `XLOG_MAX_VLOG_VERBOSITY=<n>` — compile out `XVLOG` above `n`
+
+**Verbose logging:** `XVLOG` is always severity INFO (not DEBUG/TRACE). Runtime
+gate is `xlog::set_verbosity(n)` only (no vmodule). Also:
+`XVLOG_EVERY_N` / `FIRST_N` / `ONCE` / `EVERY_POW_2` / `EVERY_N_SEC` (+ `DXVLOG_*`).
 
 **Prefix:** global `xlog::set_log_with_prefix(bool)` / `set_utc(bool)`,
 or per-statement `XLOG(INFO).no_prefix()`.

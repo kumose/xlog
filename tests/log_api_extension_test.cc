@@ -106,11 +106,63 @@ namespace {
         xlog::set_verbosity(2);
         ScopedMockLog log(MockLogDefault::kDisallowUnexpected);
         EXPECT_CALL(log, Send(AllOf(Severity(Eq(LogSeverity::kSeverityInfo)),
-                                    TextMessage(Eq("seen")))));
+                                    TextMessage(Eq("seen")),
+                                    FormattedMessage(HasSubstr(" V2]")))));
         log.StartCapturingLogs();
         XVLOG(2) << "seen";
         EXPECT_TRUE(XVLOG_IS_ON(2));
         EXPECT_FALSE(XVLOG_IS_ON(3));
+    }
+
+#ifndef NDEBUG
+    TEST_F(LogApiExtensionTest, DvlogInDebug) {
+        xlog::set_verbosity(1);
+        ScopedMockLog log(MockLogDefault::kDisallowUnexpected);
+        EXPECT_CALL(log, Send(AllOf(Severity(Eq(LogSeverity::kSeverityInfo)),
+                                    TextMessage(Eq("dbg")))));
+        log.StartCapturingLogs();
+        DXVLOG(1) << "dbg";
+    }
+#endif
+
+    TEST_F(LogApiExtensionTest, VlogEveryN) {
+        xlog::set_verbosity(1);
+        ScopedMockLog log(MockLogDefault::kDisallowUnexpected);
+        EXPECT_CALL(log, Log(LogSeverity::kSeverityInfo, _, _)).Times(3);
+        log.StartCapturingLogs();
+        for (int i = 0; i < 7; ++i) {
+            XVLOG_EVERY_N(1, 3) << "n=" << COUNTER;
+        }
+    }
+
+    TEST_F(LogApiExtensionTest, VlogFirstN) {
+        xlog::set_verbosity(1);
+        ScopedMockLog log(MockLogDefault::kDisallowUnexpected);
+        EXPECT_CALL(log, Log(LogSeverity::kSeverityInfo, _, _)).Times(2);
+        log.StartCapturingLogs();
+        for (int i = 0; i < 5; ++i) {
+            XVLOG_FIRST_N(1, 2) << "f=" << COUNTER;
+        }
+    }
+
+    TEST_F(LogApiExtensionTest, VlogOnce) {
+        xlog::set_verbosity(1);
+        ScopedMockLog log(MockLogDefault::kDisallowUnexpected);
+        EXPECT_CALL(log, Log(LogSeverity::kSeverityInfo, _, _)).Times(1);
+        log.StartCapturingLogs();
+        for (int i = 0; i < 3; ++i) {
+            XVLOG_ONCE(1) << "once";
+        }
+    }
+
+    TEST_F(LogApiExtensionTest, VlogEveryNWhenVerbosityOff) {
+        xlog::set_verbosity(0);
+        ScopedMockLog log(MockLogDefault::kDisallowUnexpected);
+        EXPECT_CALL(log, Log).Times(0);
+        log.StartCapturingLogs();
+        for (int i = 0; i < 5; ++i) {
+            XVLOG_EVERY_N(1, 1) << "nope";
+        }
     }
 
     TEST_F(LogApiExtensionTest, PlogAppendsErrno) {

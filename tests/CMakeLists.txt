@@ -140,3 +140,17 @@ kmcmake_cc_test(
         xlog::xlog_static
         ${KMCMAKE_DEPS_LINK}
 )
+
+kmcmake_cc_test(
+        NAME max_vlog_verbosity_test
+        MODULE log
+        SOURCES max_vlog_verbosity_test.cc
+        DEFINES XLOG_MAX_VLOG_VERBOSITY=1
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+        LINKS
+        GTest::gtest
+        GTest::gmock
+        xlog::test_support_static
+        xlog::xlog_static
+        ${KMCMAKE_DEPS_LINK}
+)

@@ -19,7 +19,8 @@
 //   XLOG(INFO) << "hello";
 //   XLOG(INFO).no_prefix() << "raw";
 //   XPLOG(ERROR) << "open failed";
-//   XVLOG(1) << "verbose";
+//   XVLOG(1) << "verbose";   // INFO if verbosity >= 1
+//   XVLOG_EVERY_N(1, 100) << COUNTER;
 //   TLOG(INFO, "x={}", 1);
 //   ZLOG(INFO, "x=%d", 1);
 //   XCHECK(ptr != nullptr);

@@ -144,8 +144,8 @@ CivilDay to_civil_day(std::chrono::system_clock::time_point tp, bool utc) {
 //   I2026-07-20T03:17:05.123456Z 13982 foo.cc:42] hello world   // utc
 //
 // Template:
-//   L{RFC3339} tid[(thread_identify)] file:line] message\n
-//   L = T/D/I/W/E/F
+//   L{RFC3339} tid[(thread_identify)] file:line Vn] message\n  (Vn if verbose)
+//   L = T/D/I/W/E/F  (XVLOG stays L=I)
 //   RFC3339 = YYYY-MM-DDThh:mm:ss.ssssssZ or ...±hh:mm
 //   thread = tid(thread_identify) if name set, else tid
 //
@@ -177,10 +177,22 @@ void xlog_format(LogEntry &entry) {
             std::string_view(cache.zone, cache.zone_len));
 
         const std::string_view file = BaseName(entry.filename);
+        // XVLOG: keep INFO letter; mark numeric level before ']' (e.g. " V2]").
         if (!entry.thread_identify.empty()) {
+            if (entry.verbose_level > 0) {
+                fmt::format_to(std::back_inserter(entry.format_buffer),
+                               " {}({}) {}:{} V{}] ", entry.tid,
+                               entry.thread_identify, file, entry.line,
+                               entry.verbose_level);
+            } else {
+                fmt::format_to(std::back_inserter(entry.format_buffer),
+                               " {}({}) {}:{}] ", entry.tid,
+                               entry.thread_identify, file, entry.line);
+            }
+        } else if (entry.verbose_level > 0) {
             fmt::format_to(std::back_inserter(entry.format_buffer),
-                           " {}({}) {}:{}] ", entry.tid, entry.thread_identify,
-                           file, entry.line);
+                           " {} {}:{} V{}] ", entry.tid, file, entry.line,
+                           entry.verbose_level);
         } else {
             fmt::format_to(std::back_inserter(entry.format_buffer),
                            " {} {}:{}] ", entry.tid, file, entry.line);

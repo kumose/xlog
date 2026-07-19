@@ -34,7 +34,7 @@ int main() {
 |-----|------|
 | `XLOG` / `DXLOG` | `operator<<`（含 `DFATAL`、`.no_prefix()`） |
 | `XPLOG` | `XLOG` + CRT `errno` 后缀（非 Win32 `GetLastError`） |
-| `XVLOG(n)` / `DXVLOG(n)` | 详细 INFO（`XVLOG_IS_ON`） |
+| `XVLOG(n)` / `DXVLOG(n)` | **INFO**，`n <= verbosity()`（`XVLOG_IS_ON`）；前缀标 `Vn` |
 | `TLOG` / `DTLOG` | `fmt::format`（`print`） |
 | `ZLOG` / `DZLOG` | printf（`fmt::sprintf`） |
 | `XCHECK*` / `DXCHECK*` | 致命检查 |
@@ -45,6 +45,11 @@ int main() {
 **编译期开关（可选）：**
 - `XLOG_MIN_LOG_LEVEL=<int>` — 低于该 `LogSeverity` 的宏被短路（0=TRACE … 5=FATAL）
 - `XLOG_STRIP_LOG=1` — 非 FATAL 变为 `NullStream`；FATAL/CHECK 仍会终止进程
+- `XLOG_MAX_VLOG_VERBOSITY=<n>` — 编译期裁掉高于 `n` 的 `XVLOG`
+
+**详细日志：** `XVLOG` 固定 INFO（不用 DEBUG/TRACE）。运行时只看
+`set_verbosity(n)`（无 vmodule）。另有 `XVLOG_EVERY_N` / `FIRST_N` / `ONCE` /
+`EVERY_POW_2` / `EVERY_N_SEC`（及 `DXVLOG_*`）。
 
 **前缀：** 全局 `set_log_with_prefix` / `set_utc`，或单条 `XLOG(INFO).no_prefix()`。
 
