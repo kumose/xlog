@@ -28,6 +28,8 @@ kmcmake_cc_library(
         internal/append_file.cc
         internal/log_message.cc
         sinks/default_sink.cc
+        sinks/android_log_sink.cc
+        sinks/windows_debugger_sink.cc
         sinks/ansi_color_sink.cc
         sinks/log_filename.cc
         sinks/rotating_file_sink.cc
@@ -45,5 +47,6 @@ kmcmake_cc_library(
         ${KMCMAKE_CXX_OPTIONS}
         PLINKS
         ${KMCMAKE_DEPS_LINK}
+        $<$<BOOL:${ANDROID}>:log>
         PUBLIC
 )

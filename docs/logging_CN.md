@@ -70,7 +70,8 @@ class JsonLogSinkSet : public xlog::LogSinkSet {
 
 - `id → LogSinkSet`；同一时刻一个 default。
 - **不提供 remove**——热路径可在 `set_default` 后长期持有裸 `LogSinkSet*`。
-- id `0`：内置 set（`DefaultSink` → stderr），首次使用时创建。
+- id `0`：内置 set — `DefaultSink`（stderr），Android / Windows 上再并列挂
+  `AndroidLogSink` / `WindowsDebuggerLogSink`（与 absl/turbo 默认终端通道一致）。
 - `set_default_sink(id)` 切换进程默认 set（`log_to_sinks` 走这里）。
 
 ## 过滤（正交旋钮）

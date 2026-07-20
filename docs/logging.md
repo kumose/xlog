@@ -77,7 +77,9 @@ for format; keep sinks thin.
 
 - Map `id → LogSinkSet`; one default id / pointer.
 - **No remove** — hot path may keep a raw `LogSinkSet*` after `set_default`.
-- Id `0` is the built-in set (`DefaultSink` → stderr) created at first use.
+- Id `0` is the built-in set created at first use: `DefaultSink` (stderr), and
+  on Android / Windows also `AndroidLogSink` / `WindowsDebuggerLogSink` as
+  **sibling** sinks in the same set (absl/turbo-style platform terminals).
 - `set_default_sink(id)` switches the process-wide default used by
   `log_to_sinks`.
 

@@ -140,6 +140,9 @@
 /// @brief internal/log_message.* — LogMessage / flush
 /// @brief internal/conditions.* nullstream.h voidify.h strerror.* — macro support
 /// @brief sinks/* — concrete LogSink implementations
+/// AI: Default set (create_default): DefaultSink + AndroidLogSink (__ANDROID__)
+/// AI:   + WindowsDebuggerLogSink (_WIN32). Platform sinks are siblings in the
+/// AI:   default LogSinkSet, not inside DefaultSink::send.
 /// @brief utility.h — write_to_stderr, hex_string, thread identify
 /// @brief tests/ — gtest; many TUs provide their own main + LogTestEnvironment
 /// @}

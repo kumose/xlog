@@ -23,6 +23,13 @@
 #include <xlog/sinks/default_sink.h>
 #include <xlog/utility.h>
 
+#if defined(__ANDROID__)
+#include <xlog/sinks/android_log_sink.h>
+#endif
+#if defined(_WIN32)
+#include <xlog/sinks/windows_debugger_sink.h>
+#endif
+
 namespace xlog {
 namespace {
 
@@ -114,9 +121,20 @@ namespace {
     }
 
     std::unique_ptr<LogSinkSet> LogSinkRegistry::create_default() {
+        // Platform terminals (absl/turbo-style): stderr always (DefaultSink),
+        // plus Android logcat and/or Windows OutputDebugString when built for
+        // those platforms — all as siblings in the default set.
         std::vector<LogSink *> sinks;
         static DefaultSink default_sink;
         sinks.push_back(&default_sink);
+#if defined(__ANDROID__)
+        static AndroidLogSink android_log_sink;
+        sinks.push_back(&android_log_sink);
+#endif
+#if defined(_WIN32)
+        static WindowsDebuggerLogSink windows_debugger_sink;
+        sinks.push_back(&windows_debugger_sink);
+#endif
         return std::make_unique<LogSinkSet>(sinks);
     }
 
