@@ -44,6 +44,9 @@ int main() {
 
 **Sink：** `LogSinkRegistry` 管理多组 sink set，同一时刻一个 default；
 `add_log_sink` / `add_log_sinks` 注册，`set_default_sink(id)` 切换；不提供 remove。
+两层：`LogSink`（写出）与 `LogSinkSet`（一次 format + 扇出 +
+`stderr_threshold` / FATAL）。自定义排版应继承 `LogSinkSet` 重写 `format_log`。
+详见 [docs/logging_CN.md](./docs/logging_CN.md)。
 
 **一键启动**（`<xlog/setup.h>` / `logging.h`）：
 ```cpp

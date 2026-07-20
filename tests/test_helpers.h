@@ -46,6 +46,21 @@ namespace test {
         LogSeverity previous_;
     };
 
+    // RAII restore of stderr_threshold.
+    class ScopedStderrThreshold {
+    public:
+        explicit ScopedStderrThreshold(LogSeverity severity)
+            : previous_(stderr_threshold()) {
+            set_stderr_threshold(severity);
+        }
+        ScopedStderrThreshold(const ScopedStderrThreshold &) = delete;
+        ScopedStderrThreshold &operator=(const ScopedStderrThreshold &) = delete;
+        ~ScopedStderrThreshold() { set_stderr_threshold(previous_); }
+
+    private:
+        LogSeverity previous_;
+    };
+
 #if GTEST_HAS_DEATH_TEST
     bool DiedOfFatal(int exit_status);
 #endif

@@ -18,7 +18,6 @@
 #include <cstdint>
 #include <deque>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <string_view>
 
@@ -30,6 +29,7 @@ namespace log_internal {
     class AppendFile;
 }  // namespace log_internal
 
+    // No per-sink mutex: LogSinkSet serializes send/flush.
     class HourlyFileSink : public LogSink {
     public:
         HourlyFileSink(std::string_view base_filename, uint16_t max_files = 84,
@@ -53,7 +53,6 @@ namespace log_internal {
         clock::time_point _next_check{};
         std::deque<std::string> _files;
         std::unique_ptr<log_internal::AppendFile> _file;
-        std::mutex _mutex;
     };
 
 }  // namespace xlog

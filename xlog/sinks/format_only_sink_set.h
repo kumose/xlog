@@ -12,17 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+// LogSinkSet that formats (unlocked in do_log) then skips sink I/O in
+// dispatch_locked. For benchmarks / format-cost measurement.
+// FATAL still writes stderr and aborts under the set lock.
 
 #pragma once
 
-#include <xlog/log_sink.h>
+#include <vector>
+
+#include <xlog/log_sink_set.h>
 
 namespace xlog {
-    // stderr via write_to_stderr. No per-sink mutex: LogSinkSet serializes send.
-    class DefaultSink : public xlog::LogSink {
-    public:
-        DefaultSink() = default;
 
-        void send(const xlog::LogEntry &entry) final;
+    class FormatOnlySinkSet final : public LogSinkSet {
+    public:
+        FormatOnlySinkSet() : LogSinkSet(std::vector<LogSink *>{}) {}
+
+    protected:
+        void dispatch_locked(LogEntry &entry,
+                             const std::vector<LogSink *> &extra_sinks,
+                             bool extra_sinks_only, bool flush) override;
     };
-} // namespace xlog
+
+}  // namespace xlog

@@ -22,21 +22,37 @@
 #include <unordered_map>
 
 namespace xlog {
+    // One sink set. Hot path:
+    //   1) format_log on the logging thread (no set lock)
+    //   2) lock `_mutex`, then dispatch_locked (sink send/flush + stderr)
+    //
+    // The set mutex serializes I/O across threads so built-in sinks need no
+    // per-sink mutex. Re-entrant XLOG from inside send() skips the lock and
+    // writes stderr only (absl/turbo-style).
     class LogSinkSet {
     public:
-        LogSinkSet(const std::vector<LogSink *> &log_files);
+        explicit LogSinkSet(const std::vector<LogSink *> &log_files);
 
         virtual ~LogSinkSet() = default;
 
         const std::vector<LogSink *> &sinks();
 
         virtual void do_log(xlog::LogEntry &&entry,
-                            const std::vector<xlog::LogSink *> &extra_sinks, bool extra_sinks_only, bool flush);
+                            const std::vector<xlog::LogSink *> &extra_sinks,
+                            bool extra_sinks_only, bool flush);
 
     protected:
+        // Runs unlocked on the logging thread. Override for custom layout.
         virtual void format_log(xlog::LogEntry &entry);
 
-        virtual void on_fatal_error(xlog::LogEntry &entry);
+        // Runs with `_mutex` held. `format_buffer` is already filled.
+        // Default: fan-out to extras + set sinks, then stderr_threshold.
+        // Override to skip I/O (e.g. FormatOnlySinkSet) or change dispatch.
+        virtual void dispatch_locked(LogEntry &entry,
+                                     const std::vector<LogSink *> &extra_sinks,
+                                     bool extra_sinks_only, bool flush);
+
+        std::mutex _mutex;
 
     private:
         std::vector<LogSink *> _sinks;
@@ -66,6 +82,9 @@ namespace xlog {
 
         // Non-owning set (for tests / externally managed sinks).
         uint32_t add_log_sinks(const std::vector<LogSink *> &sinks);
+
+        // Owns a custom LogSinkSet subclass (e.g. FormatOnlySinkSet).
+        uint32_t add_log_sink_set(std::unique_ptr<LogSinkSet> sink_set);
 
         bool set_default(uint32_t sink_id);
 
@@ -101,6 +120,10 @@ namespace xlog {
 
     inline uint32_t add_log_sinks(const std::vector<LogSink *> &sinks) {
         return LogSinkRegistry::instance().add_log_sinks(sinks);
+    }
+
+    inline uint32_t add_log_sink_set(std::unique_ptr<LogSinkSet> sink_set) {
+        return LogSinkRegistry::instance().add_log_sink_set(std::move(sink_set));
     }
 
     inline bool set_default_sink(uint32_t sink_id) {

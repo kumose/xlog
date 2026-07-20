@@ -97,6 +97,7 @@ set(XLOG_LOG_TESTS
         strerror_test
         utility_test
         log_sink_file_test
+        stderr_threshold_test
 )
 
 foreach (test ${XLOG_LOG_TESTS})

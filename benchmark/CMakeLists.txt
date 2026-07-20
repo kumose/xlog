@@ -1,11 +1,11 @@
 #
-# Copyright 2023 The titan-search Authors.
+# Copyright (C) 2026 Kumo inc. and its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#    https://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,4 +14,19 @@
 # limitations under the License.
 #
 
-configure_file(${PROJECT_SOURCE_DIR}/benchmark/config.h.in ${PROJECT_SOURCE_DIR}/benchmark/config.h @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/benchmark/config.h.in
+               ${PROJECT_SOURCE_DIR}/benchmark/config.h @ONLY)
+
+find_package(benchmark REQUIRED)
+
+kmcmake_cc_benchmark(
+    MODULE log
+    NAME log_bench
+    SOURCES
+        log_bench.cc
+    CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+    LINKS
+        xlog::xlog_static
+        benchmark::benchmark
+        ${KMCMAKE_DEPS_LINK}
+)

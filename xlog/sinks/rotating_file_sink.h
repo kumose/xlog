@@ -17,7 +17,6 @@
 #include <chrono>
 #include <cstddef>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <string_view>
 
@@ -31,6 +30,7 @@ namespace log_internal {
 
     // Size-based rotation: active file is `base_filename`;
     // rotated files are `basename_0001.ext` ... `basename_NNNN.ext`.
+    // No per-sink mutex: LogSinkSet serializes send/flush.
     class RotatingFileSink : public LogSink {
     public:
         RotatingFileSink(std::string_view base_filename, size_t max_size_bytes,
@@ -51,7 +51,6 @@ namespace log_internal {
         int _check_interval_s;
         std::chrono::system_clock::time_point _next_check{};
         std::unique_ptr<log_internal::AppendFile> _file;
-        std::mutex _mutex;
     };
 
 }  // namespace xlog

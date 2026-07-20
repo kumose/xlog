@@ -29,12 +29,15 @@ namespace xlog {
     // "logs/<basename>_log.txt" from argv0 (last path component).
     std::string make_default_log_filename(std::string_view argv0);
 
-    // DefaultSink already covers stderr; this re-registers a plain stderr set.
+    // DefaultSink already covers stderr; sets stderr_threshold to FATAL.
     uint32_t setup_stderr();
 
+    // Color stdout; stderr_threshold ERROR (mirror ERROR+ to plain stderr).
     uint32_t setup_color_stdout();
+    // Color stderr; stderr_threshold FATAL (avoid double-print).
     uint32_t setup_color_stderr();
 
+    // File sinks: stderr_threshold ERROR (file + ERROR+ stderr mirror).
     // max_file_size_mb: rotate when active file reaches this size.
     uint32_t setup_rotating_file(std::string_view base_filename,
                                  int max_file_size_mb = 100,
@@ -49,7 +52,7 @@ namespace xlog {
                                uint16_t max_files = 84,
                                int check_interval_s = 60, bool truncate = false);
 
-    // File + colored stderr in one sink set.
+    // File + colored stderr; stderr_threshold FATAL.
     uint32_t setup_rotating_file_and_color_stderr(
         std::string_view base_filename, int max_file_size_mb = 100,
         size_t max_files = 100, int check_interval_s = 60);

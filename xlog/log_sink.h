@@ -21,29 +21,22 @@ namespace xlog {
 
     // xlog::LogSink
     //
-    // `xlog::LogSink` is an interface which can be extended to intercept and
-    // process particular messages (with `XLOG.to_sink_only()` or
-    // `XLOG.to_sink_also()`) or all messages (if registered with
-    // `xlog::add_log_sink`).  Implementations must not take any locks that might be
-    // held by the `XLOG` caller.
+    // Destination I/O only. Registered sinks are invoked from
+    // `LogSinkSet::dispatch_locked` while the **set mutex is held**, so
+    // built-in sinks do not need their own mutex for ordering — the set
+    // serializes send/flush across threads.
+    //
+    // Do not take locks that the `XLOG` caller might hold. Prefer not taking
+    // a second mutex in send/flush (nested lock / deadlock risk with the set).
+    // Re-entrant `XLOG` from send() is supported via the set TLS guard.
     class LogSink {
     public:
         virtual ~LogSink() = default;
 
-        // LogSink::Send()
-        //
-        // `Send` is called synchronously during the log statement.  `Send` must be
-        // thread-safe.
-        //
-        // It is safe to use `XLOG` within an implementation of `Send`.  `to_sink_only`
-        // and `to_sink_also` are safe in general but can be used to create an infinite
-        // loop if you try.
+        // Called under LogSinkSet's mutex with format_buffer already filled.
         virtual void send(const xlog::LogEntry &entry) = 0;
 
-        // LogSink::Flush()
-        //
-        // Sinks that buffer messages should override this method to flush the buffer
-        // and return.  `Flush` must be thread-safe.
+        // Optional; also called under the set mutex when flush was requested.
         virtual void flush() {}
 
     protected:

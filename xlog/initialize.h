@@ -29,7 +29,10 @@ namespace xlog {
 
         std::shared_mutex log_mutex;
 
-        LogSeverity stderr_threshold{LogSeverity::kSeverityError};
+        // Mirror to stderr when severity >= this. Default FATAL matches the
+        // built-in DefaultSink (already writes stderr); file-only setups
+        // typically lower this to ERROR.
+        LogSeverity stderr_threshold{LogSeverity::kSeverityFatal};
         LogSeverity min_log_level{LogSeverity::kSeverityInfo};
 
         bool log_with_prefix{true};

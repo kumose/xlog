@@ -16,7 +16,6 @@
 
 #include <array>
 #include <cstdio>
-#include <mutex>
 #include <string_view>
 
 #include <xlog/log_severity.h>
@@ -24,6 +23,7 @@
 
 namespace xlog {
 
+    // No per-sink mutex: LogSinkSet serializes send/flush.
     class AnsiColorSink : public LogSink {
     public:
         explicit AnsiColorSink(FILE *file);
@@ -41,7 +41,6 @@ namespace xlog {
 
     private:
         FILE *_file{nullptr};
-        std::mutex _mutex;
         bool _color_active{false};
     };
 

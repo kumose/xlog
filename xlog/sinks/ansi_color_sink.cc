@@ -43,7 +43,7 @@ namespace {
     }
 
     void AnsiColorSink::send(const LogEntry &entry) {
-        std::lock_guard<std::mutex> lock(_mutex);
+        // Called under LogSinkSet mutex — no sink-level lock.
         if (_file == nullptr) {
             return;
         }
@@ -60,7 +60,6 @@ namespace {
     }
 
     void AnsiColorSink::flush() {
-        std::lock_guard<std::mutex> lock(_mutex);
         if (_file != nullptr) {
             std::fflush(_file);
         }

@@ -11,32 +11,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
-#include <xlog/initialize.h>
+#include <xlog/sinks/format_only_sink_set.h>
+
+#include <cstdlib>
+
 #include <xlog/log_severity.h>
-#include <xlog/sinks/default_sink.h>
 #include <xlog/utility.h>
-
-#include <mutex>
 
 namespace xlog {
 
-    void DefaultSink::send(const xlog::LogEntry &entry) {
-        static std::once_flag once;
-        std::call_once(once, [] {
-            if (is_initialized()) {
-                return;
-            }
+    void FormatOnlySinkSet::dispatch_locked(
+        LogEntry &entry, const std::vector<LogSink *> & /*extra_sinks*/,
+        bool /*extra_sinks_only*/, bool /*flush*/) {
+        // format_log already ran unlocked in LogSinkSet::do_log.
+        // No sink I/O — measure format cost only. FATAL still terminates.
+        if (entry.log_severity == LogSeverity::kSeverityFatal) {
             write_to_stderr(
-                "WARNING: logging before initialize_log(); "
-                "calling initialize_log() and writing to STDERR\n",
-                LogSeverity::kSeverityWarning);
-            initialize_log();
-        });
-
-        // Called under LogSinkSet mutex — no sink-level lock.
-        write_to_stderr({entry.format_buffer.data(), entry.format_buffer.size()},
-                        entry.log_severity);
+                {entry.format_buffer.data(), entry.format_buffer.size()},
+                entry.log_severity);
+            std::abort();
+        }
     }
-} // namespace xlog
+
+}  // namespace xlog

@@ -171,9 +171,8 @@ namespace xlog {
             return;
         }
 
+        // FATAL abort runs inside LogSinkSet::do_log (nested under
+        // stderr_threshold). Filtered-out FATAL still aborts above.
         log_to_sinks(std::move(_entry), _extra_sinks, _extra_sinks_only, fatal);
-        if (fatal) {
-            std::abort();
-        }
     }
 } // namespace xlog

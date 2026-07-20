@@ -16,8 +16,9 @@ code. The current version introduces:
 - Thin `<project>_cxx_config.cmake` that just aggregates
 - `KMCMAKE_CXX_OPTIONS` as the single aggregated flag variable
 - `KMCMAKE_ARCH_ENABLE_*` exported as 0/1 integers for version.h
-- `skills.h` for AI-readable project summaries
-- `docs/AI.md` for AI context and API reference
+- `skills.h` for AI-readable project summaries (**xlog:** keep logging design
+  prompts in `xlog/skills.h`; see also `docs/logging.md`)
+- `docs/AI.md` for AI context (xlog rules at top + kmcmake API reference)
 
 ## What Changed
 

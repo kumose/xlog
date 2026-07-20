@@ -33,6 +33,7 @@ kmcmake_cc_library(
         sinks/rotating_file_sink.cc
         sinks/daily_file_sink.cc
         sinks/hourly_file_sink.cc
+        sinks/format_only_sink_set.cc
         format.cc
         log_sink.cc
         log_sink_set.cc

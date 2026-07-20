@@ -45,6 +45,9 @@ int main() {
 **Sinks:** `LogSinkRegistry` holds named sink sets; only one is default.
 `add_log_sink` / `add_log_sinks` register sets; `set_default_sink(id)` switches.
 There is no remove (hot path can use a raw `LogSinkSet*`).
+Two layers: `LogSink` (I/O) vs `LogSinkSet` (format once + fan-out +
+`stderr_threshold` / FATAL). Custom layouts → subclass `LogSinkSet` and
+override `format_log`. See [docs/logging.md](./docs/logging.md).
 
 **Setup helpers** (`<xlog/setup.h>` / via `logging.h`):
 ```cpp

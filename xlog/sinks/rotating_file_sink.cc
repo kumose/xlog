@@ -39,7 +39,7 @@ namespace xlog {
     }
 
     void RotatingFileSink::send(const LogEntry &entry) {
-        std::lock_guard<std::mutex> lock(_mutex);
+        // Called under LogSinkSet mutex — no sink-level lock.
         maybe_rotate(entry.timestamp);
         if (!_file) {
             return;
@@ -50,7 +50,6 @@ namespace xlog {
     }
 
     void RotatingFileSink::flush() {
-        std::lock_guard<std::mutex> lock(_mutex);
         if (_file) {
             _file->flush();
         }

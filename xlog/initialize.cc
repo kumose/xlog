@@ -27,7 +27,7 @@ namespace xlog {
             return;
         }
 
-        cfg.stderr_threshold = LogSeverity::kSeverityError;
+        cfg.stderr_threshold = LogSeverity::kSeverityFatal;
         cfg.min_log_level = LogSeverity::kSeverityInfo;
         cfg.log_with_prefix = true;
         cfg.log_truncate = false;
