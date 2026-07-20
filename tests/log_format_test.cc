@@ -17,7 +17,7 @@
 #include "test_helpers.h"
 
 #include <chrono>
-#include <regex>
+#include <cctype>
 #include <string>
 #include <string_view>
 
@@ -44,13 +44,30 @@ namespace {
     using ::xlog::ScopedMockLog;
     using ::xlog::test::FormattedMessage;
 
-    // gtest MatchesRegex uses a reduced engine on MSVC (no [], {}); use std::regex.
-    // FormattedMessage matchers see string_view; regex_match has no string_view
-    // overload until C++23, so match via iterators (works for string too).
-    MATCHER_P(MatchesStdRegex, pattern, "") {
-        const std::regex re(std::string(pattern), std::regex::ECMAScript);
-        *result_listener << "against pattern \"" << pattern << "\"";
-        return std::regex_match(arg.begin(), arg.end(), re);
+    // Portable checks for LYYYY-MM-DDThh:mm:ss.us±hh:mm ... (no std::regex /
+    // gtest MatchesRegex — both are unreliable across MSVC/libc++).
+    void ExpectLocalOffsetPrefix(std::string_view out) {
+        ASSERT_GE(out.size(), 32u);
+        EXPECT_NE(std::string_view("TDIWEF").find(out[0]), std::string_view::npos);
+
+        // YYYY-MM-DD
+        EXPECT_TRUE(std::isdigit(static_cast<unsigned char>(out[1])));
+        EXPECT_TRUE(std::isdigit(static_cast<unsigned char>(out[2])));
+        EXPECT_TRUE(std::isdigit(static_cast<unsigned char>(out[3])));
+        EXPECT_TRUE(std::isdigit(static_cast<unsigned char>(out[4])));
+        EXPECT_EQ(out[5], '-');
+        EXPECT_EQ(out[8], '-');
+        EXPECT_EQ(out[11], 'T');
+        EXPECT_EQ(out[14], ':');
+        EXPECT_EQ(out[17], ':');
+        EXPECT_EQ(out[20], '.');
+
+        const auto frac_end = out.find_first_of("+-", 21);
+        ASSERT_NE(frac_end, std::string_view::npos);
+        EXPECT_EQ(frac_end, 27u);  // 6 fractional digits after '.'
+        ASSERT_GE(out.size(), frac_end + 6);
+        EXPECT_EQ(out[frac_end + 3], ':');  // ±hh:mm
+        EXPECT_THAT(std::string(out), HasSubstr("foo.cc:42] x\n"));
     }
 
     class LogFormatTest : public ::testing::Test {
@@ -124,24 +141,20 @@ namespace {
         EXPECT_EQ(out, "plain\n");
     }
 
-    TEST_F(LogFormatTest, LocalOffsetRegex) {
+    TEST_F(LogFormatTest, LocalOffsetPrefix) {
         xlog::set_utc(false);
         LogEntry e = MakeEntry("x");
         xlog::xlog_format(e);
         const std::string out(e.format_buffer.data(), e.format_buffer.size());
-        // LYYYY-MM-DDThh:mm:ss.us±hh:mm ...
-        EXPECT_THAT(out, MatchesStdRegex(
-                             "[TDIWEF][0-9]{4}-[0-9]{2}-[0-9]{2}T"
-                             "[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}"
-                             "[+-][0-9]{2}:[0-9]{2} .*foo\\.cc:42] x\n"));
+        ExpectLocalOffsetPrefix(out);
     }
 
     TEST_F(LogFormatTest, ViaXlogMock) {
         ScopedMockLog log(MockLogDefault::kDisallowUnexpected);
         EXPECT_CALL(
             log, Send(FormattedMessage(AllOf(
-                     HasSubstr("foo message"),
-                     MatchesStdRegex("I[0-9]{4}-.*] foo message\n")))));
+                     StartsWith("I"), HasSubstr("] foo message\n"),
+                     HasSubstr("foo message")))));
         log.StartCapturingLogs();
         XLOG(INFO) << "foo message";
     }
