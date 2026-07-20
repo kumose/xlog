@@ -5,11 +5,12 @@ on:
   workflow_dispatch:
 
 # Called from ci.yml. Env mirrors kumose/x-ci windows job; build uses MSVC via
-# msvc-dev-cmd + Ninja so it matches kmpkg x64-windows (not MinGW / not a fixed VS year).
+# msvc-dev-cmd + Ninja so it matches kmpkg x64-windows (not MinGW).
 jobs:
   windows-msvc:
     name: Windows MSVC
-    runs-on: windows-latest
+    # Pin 2022 for a stable VS 17 image while iterating; avoid windows-latest VS 18 churn.
+    runs-on: windows-2022
     defaults:
       run:
         shell: pwsh
@@ -20,38 +21,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
-      - name: Dump environment
-        run: |
-          Write-Host "=== Environment Dump ==="
-          Write-Host "OS: $((Get-CimInstance Win32_OperatingSystem).Caption) $((Get-CimInstance Win32_OperatingSystem).OSArchitecture)"
-          $tools = @('cmake', 'ninja', 'git', 'python3', 'curl', 'tar')
-          foreach ($tool in $tools) {
-            $path = Get-Command $tool -ErrorAction SilentlyContinue
-            if ($path) {
-              $ver = & $tool --version 2>&1 | Select-Object -First 1
-              Write-Host " ${tool}: $($path.Source) ($ver)"
-            } else {
-              Write-Host " ${tool}: NOT FOUND"
-            }
-          }
-          $choco = Get-Command choco -ErrorAction SilentlyContinue
-          if ($choco) {
-            $ver = & choco --version 2>&1 | Select-Object -First 1
-            Write-Host " choco: $($choco.Source) ($ver)"
-          } else {
-            Write-Host " choco: NOT FOUND"
-          }
-          $compilers = @('cl', 'clang', 'g++')
-          foreach ($cc in $compilers) {
-            $path = Get-Command $cc -ErrorAction SilentlyContinue
-            if ($path) {
-              $ver = & $cc --version 2>&1 | Select-Object -First 1
-              Write-Host " ${cc}: $($path.Source) ($ver)"
-              break
-            }
-          }
-          Write-Host "=== End ==="
 
       - name: Install deps
         run: choco install openssl strawberryperl -y
@@ -70,14 +39,39 @@ jobs:
           echo "KMPKG_FORCE_SYSTEM_BINARIES=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "KMPKG_KEEP_ENV_VARS=PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      # windows-latest now ships VS 2026 (v18); avoid hardcoding "Visual Studio 17 2022".
       - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Dump environment
+        run: |
+          Write-Host "=== Environment Dump ==="
+          Write-Host "OS: $((Get-CimInstance Win32_OperatingSystem).Caption) $((Get-CimInstance Win32_OperatingSystem).OSArchitecture)"
+          $tools = @('cmake', 'ninja', 'git', 'python3', 'curl', 'tar', 'cl', 'link')
+          foreach ($tool in $tools) {
+            $path = Get-Command $tool -ErrorAction SilentlyContinue
+            if ($path) {
+              $ver = & $tool --version 2>&1 | Select-Object -First 1
+              Write-Host " ${tool}: $($path.Source) ($ver)"
+            } else {
+              Write-Host " ${tool}: NOT FOUND"
+            }
+          }
+          Write-Host "=== End ==="
 
       - name: Configure
         run: |
+          if (-not (Get-Command cl -ErrorAction SilentlyContinue)) {
+            throw "cl.exe not on PATH after msvc-dev-cmd"
+          }
+          if (-not (Get-Command ninja -ErrorAction SilentlyContinue)) {
+            throw "ninja not on PATH"
+          }
           cmake -S . -B build `
             -G Ninja `
             -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_CXX_COMPILER=cl `
             -DCMAKE_TOOLCHAIN_FILE="$env:KMPKG_CMAKE" `
             -DKMCMAKE_BUILD_TEST=ON
 
