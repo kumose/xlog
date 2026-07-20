@@ -68,26 +68,7 @@ function(kmcmake_cc_benchmark)
         set(${KMCMAKE_CC_BM_NAME}_INCLUDE_SYSTEM "")
     endif ()
 
-    set(KMCMAKE_BUILD_THIS_TEST ON)
-    set(KMCMAKE_RUN_THIS_TEST ON)
-    if (KMCMAKE_CC_BM_DISABLED)
-        set(KMCMAKE_BUILD_THIS_TEST OFF)
-        set(KMCMAKE_RUN_THIS_TEST OFF)
-    endif ()
-    if (KMCMAKE_CC_BM_SKIP)
-        set(KMCMAKE_RUN_THIS_TEST OFF)
-    endif ()
-    if (KMCMAKE_CC_BM_EXT)
-        set(KMCMAKE_RUN_THIS_TEST OFF)
-    endif ()
     set(testcase ${KMCMAKE_CC_BM_MODULE}_${KMCMAKE_CC_BM_NAME})
-    if (${KMCMAKE_CC_BM_MODULE} IN_LIST ${PROJECT_NAME}_SKIP_BENCHMARK)
-        set(KMCMAKE_RUN_THIS_TEST OFF)
-    endif ()
-
-    if (NOT KMCMAKE_BUILD_THIS_TEST)
-        return()
-    endif ()
 
     add_executable(${testcase} ${KMCMAKE_CC_BM_SOURCES})
 
@@ -113,12 +94,6 @@ function(kmcmake_cc_benchmark)
     if (NOT KMCMAKE_CC_BM_COMMAND)
         set(KMCMAKE_CC_BM_COMMAND ${testcase})
     endif ()
-
-    if (KMCMAKE_RUN_THIS_TEST)
-        add_test(NAME ${testcase}
-                COMMAND ${KMCMAKE_CC_BM_COMMAND})
-    endif ()
-
 endfunction()
 
 function(kmcmake_cc_benchmark_ext)

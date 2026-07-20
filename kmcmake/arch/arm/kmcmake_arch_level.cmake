@@ -17,6 +17,7 @@
 # AI: Input:
 # AI:   KMCMAKE_RUNTIME_SIMD_LEVEL  - target level string (NONE or NEON)
 # AI:   KMCMAKE_ARM_HAS_*          - BOOL detection results
+# AI:   KMCMAKE_ARM_IS_64          - BOOL architecture flag
 # AI:
 # AI: Output:
 # AI:   KMCMAKE_ARCH_OPTION         - compiler flags
@@ -30,17 +31,24 @@ if(_LEVEL STREQUAL "NONE")
     return()
 endif()
 
-# AI: For ARM, SIMD level is simpler: NEON is the primary target.
-# AI: FMA is enabled alongside NEON when available.
-if(KMCMAKE_ARM_HAS_NEON)
-    list(APPEND KMCMAKE_ARCH_OPTION ${NEON_FLAG})
-endif()
-if(KMCMAKE_ARM_HAS_VFPv4)
-    list(APPEND KMCMAKE_ARCH_OPTION ${VFPv4_FLAG})
-endif()
-if(KMCMAKE_ARM_HAS_FMA)
-    list(APPEND KMCMAKE_ARCH_OPTION ${FMA_FLAG})
-    set(KMCMAKE_ARCH_ENABLE_FMA TRUE)
+if(KMCMAKE_ARM_IS_64)
+    # ARM64: NEON is baseline, only FMA needs an explicit flag
+    if(KMCMAKE_ARM_HAS_FMA)
+        list(APPEND KMCMAKE_ARCH_OPTION ${FMA_FLAG})
+        set(KMCMAKE_ARCH_ENABLE_FMA TRUE)
+    endif()
+else()
+    # ARM32: add -mfpu flags for each supported feature
+    if(KMCMAKE_ARM_HAS_NEON)
+        list(APPEND KMCMAKE_ARCH_OPTION ${NEON_FLAG})
+    endif()
+    if(KMCMAKE_ARM_HAS_VFPv4)
+        list(APPEND KMCMAKE_ARCH_OPTION ${VFPv4_FLAG})
+    endif()
+    if(KMCMAKE_ARM_HAS_FMA)
+        list(APPEND KMCMAKE_ARCH_OPTION ${FMA_FLAG})
+        set(KMCMAKE_ARCH_ENABLE_FMA TRUE)
+    endif()
 endif()
 
 list(REMOVE_DUPLICATES KMCMAKE_ARCH_OPTION)

@@ -1,89 +1,56 @@
-// Copyright(c) 2015-present, Gabi Melman & spdlog contributors.
-// Distributed under the MIT License (http://opensource.org/licenses/MIT)
+// Copyright (C) 2026 Kumo inc. and its affiliates. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #pragma once
 
-#include <xlog/details/file_helper.h>
-#include <xlog/details/null_mutex.h>
-#include <xlog/details/synchronous_factory.h>
-#include <xlog/sinks/base_sink.h>
-
-#include <mutex>
+#include <chrono>
+#include <cstddef>
+#include <memory>
 #include <string>
+#include <string_view>
+
+#include <xlog/log_sink.h>
+#include <xlog/sinks/log_filename.h>
 
 namespace xlog {
-namespace sinks {
+namespace log_internal {
+    class AppendFile;
+}  // namespace log_internal
 
-//
-// Rotating file sink based on size
-//
-template <typename Mutex>
-class rotating_file_sink final : public base_sink<Mutex> {
-public:
-    static constexpr size_t MaxFiles = 200000;
-    rotating_file_sink(filename_t base_filename,
-                       std::size_t max_size,
-                       std::size_t max_files,
-                       bool rotate_on_open = false,
-                       const file_event_handlers &event_handlers = {});
-    static filename_t calc_filename(const filename_t &filename, std::size_t index);
-    filename_t filename();
-    void rotate_now();
-    void set_max_size(std::size_t max_size);
-    std::size_t get_max_size();
-    void set_max_files(std::size_t max_files);
-    std::size_t get_max_files();
+    // Size-based rotation: active file is `base_filename`;
+    // rotated files are `basename_0001.ext` ... `basename_NNNN.ext`.
+    // No per-sink mutex: LogSinkSet serializes send/flush.
+    class RotatingFileSink : public LogSink {
+    public:
+        RotatingFileSink(std::string_view base_filename, size_t max_size_bytes,
+                         size_t max_files = 100, int check_interval_s = 60);
 
-protected:
-    void sink_it_(const details::log_msg &msg) override;
-    void flush_() override;
+        ~RotatingFileSink() override;
 
-private:
-    // Rotate files:
-    // log.txt -> log.1.txt
-    // log.1.txt -> log.2.txt
-    // log.2.txt -> log.3.txt
-    // log.3.txt -> delete
-    void rotate_();
+        void send(const LogEntry &entry) override;
+        void flush() override;
 
-    // delete the target if exists, and rename the src file to target
-    // return true on success, false otherwise.
-    bool rename_file_(const filename_t &src_filename, const filename_t &target_filename);
+    private:
+        void maybe_rotate(std::chrono::system_clock::time_point now);
 
-    filename_t base_filename_;
-    std::size_t max_size_;
-    std::size_t max_files_;
-    std::size_t current_size_;
-    details::file_helper file_helper_;
-};
+        std::string _active_path;
+        BaseFilename _base;
+        size_t _max_size;
+        size_t _max_files;
+        int _check_interval_s;
+        std::chrono::system_clock::time_point _next_check{};
+        std::unique_ptr<log_internal::AppendFile> _file;
+    };
 
-using rotating_file_sink_mt = rotating_file_sink<std::mutex>;
-using rotating_file_sink_st = rotating_file_sink<details::null_mutex>;
-
-}  // namespace sinks
-
-//
-// factory functions
-//
-template <typename Factory = xlog::synchronous_factory>
-std::shared_ptr<logger> rotating_logger_mt(const std::string &logger_name,
-                                           const filename_t &filename,
-                                           size_t max_file_size,
-                                           size_t max_files,
-                                           bool rotate_on_open = false,
-                                           const file_event_handlers &event_handlers = {}) {
-    return Factory::template create<sinks::rotating_file_sink_mt>(
-        logger_name, filename, max_file_size, max_files, rotate_on_open, event_handlers);
-}
-
-template <typename Factory = xlog::synchronous_factory>
-std::shared_ptr<logger> rotating_logger_st(const std::string &logger_name,
-                                           const filename_t &filename,
-                                           size_t max_file_size,
-                                           size_t max_files,
-                                           bool rotate_on_open = false,
-                                           const file_event_handlers &event_handlers = {}) {
-    return Factory::template create<sinks::rotating_file_sink_st>(
-        logger_name, filename, max_file_size, max_files, rotate_on_open, event_handlers);
-}
 }  // namespace xlog

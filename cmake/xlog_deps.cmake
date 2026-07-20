@@ -53,6 +53,8 @@ find_package(Threads REQUIRED)
 kmcmake_private_find_package(Threads REQUIRED)
 list(APPEND KMCMAKE_SYSTEM_DYLINK Threads::Threads)
 
+find_package(fmt REQUIRED)
+
 ############################################################
 #
 # add you libs to the KMCMAKE_DEPS_LINK variable eg as turbo
@@ -60,12 +62,14 @@ list(APPEND KMCMAKE_SYSTEM_DYLINK Threads::Threads)
 # KMCMAKE_SYSTEM_DYLINK, using it for fun.
 ##########################################################
 set(KMCMAKE_DEPS_LINK
+        #${TURBO_LIB}
+        fmt::fmt
         ${KMCMAKE_SYSTEM_DYLINK}
         )
 list(REMOVE_DUPLICATES KMCMAKE_DEPS_LINK)
 kmcmake_print_list_label("Denpendcies:" KMCMAKE_DEPS_LINK)
 
-############################################################
-# for binary
-############################################################
-set(KMCMAKE_STATIC_BIN_OPTION -static-libgcc -static-libstdc++)
+
+
+
+

@@ -1,6 +1,4 @@
 # Copyright (C) Kumo inc. and its affiliates.
-# Author: Jeff.li lijippy@163.com
-# All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,7 +31,7 @@ setup(
     version="1.1.5",
     description="xlog python binding",
     author="Kumo Ins",
-    license="Apache-2.0",
+    license="A-GPL",
     packages=["xlog"],
     package_dir={"": "python"},
     cmake_install_dir="python/xlog",

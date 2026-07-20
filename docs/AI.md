@@ -1,13 +1,93 @@
-# kmcmake AI Context
+# xlog — AI agent context
 
-This file describes the kmcmake template structure and conventions for AI assistants.
+**Read first:** `xlog/skills.h` → this file → `docs/logging.md` (中文: `docs/logging_CN.md`).
+Do not scan the whole tree before those.
+
+The second half of this file is the kmcmake framework reference (build API).
+Project-specific logging rules are in the sections below.
+
+---
+
+## xlog in one paragraph
+
+absl/glog-style C++ logger: `XLOG` (stream) / `TLOG` (fmt) / `ZLOG` (printf),
+`XCHECK*`, verbose INFO (`XVLOG`/`TVLOG`/`ZVLOG`), multi-set `LogSinkRegistry`
+(no remove; switch with `set_default_sink`). Umbrella header: `<xlog/logging.h>`.
+Prefer **snake_case** in new `xlog/` code.
+
+## Hot path (do not invent another)
+
+```text
+macro → LogMessage → flush (min_log_level / verbosity; FATAL may abort here)
+     → log_to_sinks → LogSinkSet::do_log
+          → format_log ONCE → sink send (extras + set)
+          → if severity >= stderr_threshold: write_to_stderr; if FATAL: abort
+```
+
+## Two layers — CRITICAL for any sink/format work
+
+| Layer | Type | Responsibility | Extend by |
+|-------|------|----------------|-----------|
+| Sink | `LogSink` | One destination I/O | `send` / `flush` |
+| Set | `LogSinkSet` | Format once, fan-out, stderr mirror + FATAL | `format_log` / `do_log` |
+
+**AI must obey:**
+
+1. **`do_log` = format unlocked → lock → `dispatch_locked`.** Custom layout =
+   override `format_log`; custom fan-out = override `dispatch_locked`.
+2. Sinks only do I/O on filled `format_buffer`; **no per-sink mutex** (set
+   lock serializes). Do not re-format inside every `send`.
+3. Re-entrant `XLOG` from `send` is TLS-guarded (no second set lock).
+4. Registry: `add_log_sink(s)` / `add_log_sink_set` (immortal, no remove).
+5. `to_sink_also` / `to_sink_only` extras still go through the default set’s
+   format + lock.
+
+Full write-up: [logging.md](./logging.md).
+
+## Filters (do not conflate)
+
+| Knob | Where | Meaning |
+|------|--------|---------|
+| `min_log_level` | `LogMessage::flush` | Drop entry before sinks; filtered FATAL still aborts |
+| `verbosity` | flush + macros | VLOG families are **INFO** + `verbose_level` (no vmodule) |
+| `stderr_threshold` | `LogSinkSet::do_log` after sinks | Extra stderr mirror; nested FATAL abort |
+| `XLOG_MIN_LOG_LEVEL` / `XLOG_STRIP_LOG` / `XLOG_MAX_VLOG_VERBOSITY` | compile-time | Macro gating |
+
+`stderr_threshold` contract:
+
+```text
+if (severity >= stderr_threshold) {   // always <= FATAL ⇒ FATAL enters
+  write_to_stderr(...);
+  if (FATAL) abort();
+}
+```
+
+No `on_fatal_error`. When a sink already owns stderr, set threshold to **FATAL**
+(avoid double-print). File-only `setup_*` uses **ERROR**. See `setup.cc` /
+`initialize.cc`.
+
+## Out of scope (unless user explicitly asks)
+
+- Built-in async logger (users implement `AsyncLogSinkSet` — see logging.md)
+- JSON sinks / new heavy deps
+- vmodule
+- In-tree stacktrace (`ref/` downloads are reference only)
+- Editing `kmcmake/` framework files
+- Commits / push without explicit user request
+
+## Sync vs async (product rule)
+
+Default path: **ordered sync** (format unlocked → set mutex → sinks). That is
+intentional. Peak QPS past a few M/s on one lock means async or relaxed order —
+implemented by the **application** as a `LogSinkSet` subclass (format → MPSC →
+worker runs today’s file/stderr pipeline), not assumed by the library.
 
 ## AI Constraints
 
 **Before modifying any file:**
 1. Read the file's full contents first
 2. Propose the exact change (what + why) in text
-3. Wait for user approval — do not edit until user says "go ahead" / "do it" / "改" / "干"
+3. Wait for user approval — do not edit until user says "go ahead" / "do it" / "改" / "干" / "执行"
 
 **Before running any git mutating command** (commit, push, rebase, merge, reset, etc.):
 1. State the exact command you intend to run
@@ -22,7 +102,7 @@ This file describes the kmcmake template structure and conventions for AI assist
 - Do not change `kmcmake/` framework files unless the task specifically targets them
 - Do not reformat, restyle, or rename variables/functions as side work — stick to the task
 - Batch independent operations (reads, searches, parallel commands) to reduce round-trips
-- **Distinguish questions from tasks.** If the user asks "Is X appropriate?" / "合适吗" / "应该...吧", they are seeking an opinion, not requesting action. Answer concisely and stop. Do not propose changes, do not offer to implement, do not touch files — unless the user explicitly follows up with "do it" / "改" / "干".
+- **Distinguish questions from tasks.** If the user asks "Is X appropriate?" / "合适吗" / "应该...吧", they are seeking an opinion, not requesting action. Answer concisely and stop. Do not propose changes, do not offer to implement, do not touch files — unless the user explicitly follows up with "do it" / "改" / "干" / "执行".
 
 ## AI Workflow
 
@@ -30,7 +110,14 @@ When the user gives a task, follow this sequence:
 
 1. **Diagnose** — explain the problem and propose a solution
 2. **Wait** — do not touch files until the user approves
-3. **Execute** — only after the user says "go ahead" / "do it" / "改" / "干"
+3. **Execute** — only after the user says "go ahead" / "do it" / "改" / "干" / "执行"
+
+---
+
+# kmcmake AI Context
+
+Build-system reference for this repo (kmcmake framework). Behavioral constraints
+are in the xlog section above; do not re-read this half for logging design.
 
 ## Project Overview
 
@@ -156,22 +243,21 @@ To add a new architecture:
 - To override base flags: set `KMCMAKE_BASE_CXX_FLAGS` in `user_option.cmake`
 - All public CMake functions use `kmcmake_` prefix
 
-## skills.h Convention
+## skills.h Convention (xlog)
 
-Every kmcmake-based project includes a `skills.h` file in its main source directory.
-This file is a human/AI-readable summary of the project's public API, design
-principles, and key conventions.
+`xlog/skills.h` is the **primary** AI prompt for this library (logging design +
+API map). Keep it in sync when architecture invariants change (two-layer sinks,
+`stderr_threshold`, FATAL path, out-of-scope items).
 
 **For AI agents:**
-- Read `skills.h` first — it replaces scanning all source files
-- For dependency libraries, look for their `skills.h` at `<dep>/include/<dep>/skills.h`
-- Style: all entries use `///` (Doxygen triple-slash) comments in English
-- The file contains the project summary, build API overview, configuration variables,
-  and generated macro reference
+- Read `xlog/skills.h` first, then the xlog section at the top of this file, then
+  `docs/logging.md` — that trio replaces scanning all sources for design intent
+- Style: `///` Doxygen; lines with `AI:` are agent instructions
+- For other kumose deps, look for `<dep>/skills.h` similarly
 
-**For users:**
-- Add your project-specific API documentation to `skills.h` using the same `///` style
-- Keep it concise — it should be readable at a glance
+**For maintainers:**
+- Update `skills.h` when changing hot path / sink layers / filter semantics
+- Keep entries concise; link to `docs/logging.md` for long prose
 
 ## File Generation Rules
 
@@ -179,21 +265,6 @@ principles, and key conventions.
 - `@CHANGEME@` is replaced by the project name passed via `-DCHANGEME=`
 - `@CHANGEME_UP@` is the uppercase variant
 - Non-`.in` files are copied verbatim during `cmake --install`
-
-Every kmcmake-based project includes a `skills.h` file in its main source directory.
-This file is a human/AI-readable summary of the project's public API, design
-principles, and key conventions.
-
-**For AI agents:**
-- Read `skills.h` first — it replaces scanning all source files
-- For dependency libraries, look for their `skills.h` at `<dep>/include/<dep>/skills.h`
-- Style: all entries use `///` (Doxygen triple-slash) comments in English
-- The file contains the project summary, build API overview, configuration variables,
-  and generated macro reference
-
-**For users:**
-- Add your project-specific API documentation to `skills.h` using the same `///` style
-- Keep it concise — it should be readable at a glance
 
 ---
 
@@ -203,7 +274,8 @@ Quick usage demos for all `kmcmake_cc_*` functions. Use these as templates.
 
 ## kmcmake_cc_library
 
-Builds both static and shared libraries from the same object sources.
+Builds static library from object sources. When `SHARE ON` is set, also builds
+and installs a shared variant.
 
 ```cmake
 # Minimal — public install, auto-named from folder
@@ -214,14 +286,15 @@ kmcmake_cc_library(
     HEADERS mylib.h
 )
 
-# Full example with dependencies and C++ flags
+# Full example with shared variant and dependencies
 kmcmake_cc_library(
     PUBLIC
     NAME core
     NAMESPACE myproj
     SOURCES core.cc core.h
     HEADERS core.h
-    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/include       # public includes
+    SHARE                                                # build + install shared lib
+    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/include         # public includes
     PINCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/src            # private includes
     LINKS Threads::Threads                               # public link deps
     PLINKS myproj::util                                  # private link deps
@@ -234,7 +307,7 @@ kmcmake_cc_library(
 ```
 
 Creates targets:
-- `<namespace>::<name>` (shared alias)
+- `<namespace>::<name>` (shared alias, only when `SHARE ON`)
 - `<namespace>::<name>_static` (static alias)
 
 ## kmcmake_cc_interface

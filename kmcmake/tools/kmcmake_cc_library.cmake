@@ -18,25 +18,26 @@
 ################################################################################
 # kmcmake_cc_library
 #
-# Creates both `<name>_static` and `<name>_shared` from the same object sources,
-# and exposes aliases:
+# Creates `<name>_static` and optionally `<name>_shared` from the same object
+# sources, and exposes aliases:
 #   - <namespace>::<name>_static
-#   - <namespace>::<name>  (shared alias)
+#   - <namespace>::<name>  (shared alias, only if SHARE)
 #
 # Main options:
 #   PUBLIC          Install targets when enabled.
 #   EXCLUDE_SYSTEM  Do not mark includes as SYSTEM.
 #   UNITY           Enable unity build on generated object target.
+#   SHARE           Also build + install shared variant.
 #
 # Main args:
 #   NAME            Logical library name. Defaults to current folder name.
 #   NAMESPACE       Alias namespace. Defaults to `${PROJECT_NAME}`.
-#   SHARE           Per-library override for shared install behavior ("ON").
 #
 # Typical usage:
 # kmcmake_cc_library(
 #   PUBLIC
 #   NAME mylib
+#   SHARE
 #   NAMESPACE myproj
 #   SOURCES a.cc b.cc
 #   HEADERS a.h
@@ -46,19 +47,18 @@
 # )
 #
 # Notes:
-# - Build artifacts are always created for static/shared variants.
-# - Installation behavior for shared libraries is controlled by:
-#     global `KMCMAKE_ENABLE_SHARE` or per-target `SHARE ON`.
+# - Static library is always built and installed (if PUBLIC). Output: `lib<name>.a`.
+# - Shared library is built and installed only when `SHARE ON`. Output: `lib<name>_shared.so`.
 ################################################################################
 function(kmcmake_cc_library)
     set(options
             PUBLIC
             EXCLUDE_SYSTEM
             UNITY
+            SHARE
     )
     set(args NAME
             NAMESPACE
-            SHARE
     )
 
     set(list_args
@@ -96,22 +96,19 @@ function(kmcmake_cc_library)
         kmcmake_print(" Library, NAMESPACE argument not provided. Using target alias:  ${KMCMAKE_CC_LIB_NAME}::${KMCMAKE_CC_LIB_NAME}")
     endif ()
 
-    # Shared install switch:
-    # 1) default to global option, 2) allow per-library override via SHARE ON.
-    set(__ENABLE_SHARE ${KMCMAKE_ENABLE_SHARE})
-    if(KMCMAKE_CC_LIB_SHARE)
-        if ("${KMCMAKE_CC_LIB_SHARE}" STREQUAL "ON")
-            set(__ENABLE_SHARE ON)
-        endif ()
-    endif()
-
-
-
     kmcmake_raw("-----------------------------------")
     if (KMCMAKE_CC_LIB_PUBLIC)
-        set(KMCMAKE_LIB_INFO "${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME}  SHARED&STATIC PUBLIC")
+        if(KMCMAKE_CC_LIB_SHARE)
+            set(KMCMAKE_LIB_INFO "${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME}  SHARED&STATIC PUBLIC")
+        else()
+            set(KMCMAKE_LIB_INFO "${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME}  STATIC PUBLIC")
+        endif()
     else ()
-        set(KMCMAKE_LIB_INFO "${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME}  SHARED&STATIC INTERNAL")
+        if(KMCMAKE_CC_LIB_SHARE)
+            set(KMCMAKE_LIB_INFO "${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME}  SHARED&STATIC INTERNAL")
+        else()
+            set(KMCMAKE_LIB_INFO "${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME}  STATIC INTERNAL")
+        endif()
     endif ()
 
     set(${KMCMAKE_CC_LIB_NAME}_INCLUDE_SYSTEM SYSTEM)
@@ -190,6 +187,7 @@ function(kmcmake_cc_library)
                 PRIVATE
                 ${KMCMAKE_CC_LIB_DEFINES}
         )
+        target_link_libraries(${KMCMAKE_CC_LIB_NAME}_OBJECT PRIVATE ${KMCMAKE_CC_LIB_PLINKS})
     endif ()
 
     list(LENGTH KMCMAKE_CC_LIB_OBJECTS_FLATTEN obj_len)
@@ -224,57 +222,57 @@ function(kmcmake_cc_library)
             ${_KMCMAKE_CC_LIB_PUBLIC_INCLUDES}
     )
 
-    add_library(${KMCMAKE_CC_LIB_NAME}_shared SHARED ${KMCMAKE_CC_LIB_OBJECTS_FLATTEN})
-    if (${KMCMAKE_CC_LIB_NAME}_OBJECT)
-        add_dependencies(${KMCMAKE_CC_LIB_NAME}_shared ${KMCMAKE_CC_LIB_NAME}_OBJECT)
-    endif ()
-    if (KMCMAKE_CC_LIB_DEPS)
-        add_dependencies(${KMCMAKE_CC_LIB_NAME}_shared ${KMCMAKE_CC_LIB_DEPS})
-    endif ()
-    target_link_libraries(${KMCMAKE_CC_LIB_NAME}_shared PRIVATE ${KMCMAKE_CC_LIB_PLINKS})
-    target_link_libraries(${KMCMAKE_CC_LIB_NAME}_shared PUBLIC ${KMCMAKE_CC_LIB_LINKS})
-    target_compile_definitions(${KMCMAKE_CC_LIB_NAME}_shared PUBLIC ${KMCMAKE_CC_LIB_DEFINES})
-    set_target_properties(${KMCMAKE_CC_LIB_NAME}_shared PROPERTIES
-            INTERFACE_KMCMAKE_RUNTIME_SIMD_LEVEL "${KMCMAKE_RUNTIME_SIMD_LEVEL}"
-            INTERFACE_KMCMAKE_ARCH_FLAGS "${KMCMAKE_ARCH_OPTION}"
-            INTERFACE_KMCMAKE_CXX_OPTIONS "${KMCMAKE_CXX_OPTIONS}"
-            KMCMAKE_RUNTIME_SIMD_LEVEL "${KMCMAKE_RUNTIME_SIMD_LEVEL}"
-            KMCMAKE_ARCH_FLAGS "${KMCMAKE_ARCH_OPTION}"
-            KMCMAKE_CXX_OPTIONS "${KMCMAKE_CXX_OPTIONS}"
-            EXPORT_PROPERTIES "KMCMAKE_RUNTIME_SIMD_LEVEL;KMCMAKE_ARCH_FLAGS;KMCMAKE_CXX_OPTIONS"
-    )
-    foreach (link ${KMCMAKE_CC_LIB_WLINKS})
-        target_link_libraries(${KMCMAKE_CC_LIB_NAME}_shared PRIVATE $<LINK_LIBRARY:WHOLE_ARCHIVE,${link}>)
-    endforeach ()
-    set_target_properties(${KMCMAKE_CC_LIB_NAME}_shared PROPERTIES
-            OUTPUT_NAME ${KMCMAKE_CC_LIB_NAME}
-            VERSION ${${PROJECT_NAME}_VERSION}
-            SOVERSION ${${PROJECT_NAME}_VERSION_MAJOR})
-    add_library(${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME} ALIAS ${KMCMAKE_CC_LIB_NAME}_shared)
-    target_include_directories(${KMCMAKE_CC_LIB_NAME}_shared ${${KMCMAKE_CC_LIB_NAME}_INCLUDE_SYSTEM}
-            PUBLIC
-            ${_KMCMAKE_CC_LIB_PUBLIC_INCLUDES}
-    )
+    if(KMCMAKE_CC_LIB_SHARE)
+        add_library(${KMCMAKE_CC_LIB_NAME}_shared SHARED ${KMCMAKE_CC_LIB_OBJECTS_FLATTEN})
+        if (${KMCMAKE_CC_LIB_NAME}_OBJECT)
+            add_dependencies(${KMCMAKE_CC_LIB_NAME}_shared ${KMCMAKE_CC_LIB_NAME}_OBJECT)
+        endif ()
+        if (KMCMAKE_CC_LIB_DEPS)
+            add_dependencies(${KMCMAKE_CC_LIB_NAME}_shared ${KMCMAKE_CC_LIB_DEPS})
+        endif ()
+        target_link_libraries(${KMCMAKE_CC_LIB_NAME}_shared PRIVATE ${KMCMAKE_CC_LIB_PLINKS})
+        target_link_libraries(${KMCMAKE_CC_LIB_NAME}_shared PUBLIC ${KMCMAKE_CC_LIB_LINKS})
+        target_compile_definitions(${KMCMAKE_CC_LIB_NAME}_shared PUBLIC ${KMCMAKE_CC_LIB_DEFINES})
+        set_target_properties(${KMCMAKE_CC_LIB_NAME}_shared PROPERTIES
+                INTERFACE_KMCMAKE_RUNTIME_SIMD_LEVEL "${KMCMAKE_RUNTIME_SIMD_LEVEL}"
+                INTERFACE_KMCMAKE_ARCH_FLAGS "${KMCMAKE_ARCH_OPTION}"
+                INTERFACE_KMCMAKE_CXX_OPTIONS "${KMCMAKE_CXX_OPTIONS}"
+                KMCMAKE_RUNTIME_SIMD_LEVEL "${KMCMAKE_RUNTIME_SIMD_LEVEL}"
+                KMCMAKE_ARCH_FLAGS "${KMCMAKE_ARCH_OPTION}"
+                KMCMAKE_CXX_OPTIONS "${KMCMAKE_CXX_OPTIONS}"
+                EXPORT_PROPERTIES "KMCMAKE_RUNTIME_SIMD_LEVEL;KMCMAKE_ARCH_FLAGS;KMCMAKE_CXX_OPTIONS"
+        )
+        foreach (link ${KMCMAKE_CC_LIB_WLINKS})
+            target_link_libraries(${KMCMAKE_CC_LIB_NAME}_shared PRIVATE $<LINK_LIBRARY:WHOLE_ARCHIVE,${link}>)
+        endforeach ()
+        set_target_properties(${KMCMAKE_CC_LIB_NAME}_shared PROPERTIES
+                OUTPUT_NAME "${KMCMAKE_CC_LIB_NAME}_shared"
+                VERSION ${${PROJECT_NAME}_VERSION}
+                SOVERSION ${${PROJECT_NAME}_VERSION_MAJOR})
+        add_library(${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME} ALIAS ${KMCMAKE_CC_LIB_NAME}_shared)
+        target_include_directories(${KMCMAKE_CC_LIB_NAME}_shared ${${KMCMAKE_CC_LIB_NAME}_INCLUDE_SYSTEM}
+                PUBLIC
+                ${_KMCMAKE_CC_LIB_PUBLIC_INCLUDES}
+        )
+    endif()
 
     # Install policy:
     # - PUBLIC: install static always
-    # - shared install only when enabled by __ENABLE_SHARE
+    # - shared install only when KMCMAKE_CC_LIB_SHARE
     if (KMCMAKE_CC_LIB_PUBLIC)
-        if (__ENABLE_SHARE)
-            install(TARGETS ${KMCMAKE_CC_LIB_NAME}_shared ${KMCMAKE_CC_LIB_NAME}_static
+        install(TARGETS ${KMCMAKE_CC_LIB_NAME}_static
                 EXPORT ${PROJECT_NAME}Targets
                 RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
                 LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
                 ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
                 INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-        else()
-            install(TARGETS ${KMCMAKE_CC_LIB_NAME}_static
-                EXPORT ${PROJECT_NAME}Targets
-                RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-                LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-                ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-                INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-            )
+        if(KMCMAKE_CC_LIB_SHARE)
+            install(TARGETS ${KMCMAKE_CC_LIB_NAME}_shared
+                    EXPORT ${PROJECT_NAME}Targets
+                    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+                    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
         endif()
     endif ()
 

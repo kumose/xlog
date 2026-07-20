@@ -1,0 +1,138 @@
+name: Windows MSVC
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+# Called from ci.yml. Env mirrors kumose/x-ci windows job; build uses MSVC via
+# msvc-dev-cmd + Ninja so it matches kmpkg x64-windows (not MinGW).
+jobs:
+  windows-msvc:
+    name: Windows MSVC
+    # Pin 2022 for a stable VS 17 image while iterating; avoid windows-latest VS 18 churn.
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # choco rewrites PATH; keep it before msvc-dev-cmd so cl.exe is not wiped.
+      - name: Install deps
+        run: choco install openssl strawberryperl ninja -y
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+          vsversion: '2022'
+
+      # Bootstrap after MSVC so a source-build fallback can find cl.
+      - name: Bootstrap kmpkg
+        env:
+          TEMP_DIR: ${{ runner.temp }}
+          KMPKG_FORCE_SYSTEM_BINARIES: 1
+        run: |
+          if (-not (Get-Command cl -ErrorAction SilentlyContinue)) {
+            throw "cl.exe not on PATH after msvc-dev-cmd"
+          }
+          $kmpkgRoot = Join-Path $env:TEMP_DIR "kmpkgcore"
+          git clone https://github.com/kumose/kmpkgcore.git "$kmpkgRoot"
+          python "$kmpkgRoot/kmpkgctl" bootstrap --disable-metrics
+          # kmpkg.cmake prefers $KMPKG_HOME/tools/bin; Windows symlinks there often break
+          # ninja.exe for CMake's --version probe. Force the working choco ninja.
+          $ninja = (Get-Command ninja -ErrorAction Stop).Source
+          & $ninja --version | Out-Host
+          $toolsNinja = Join-Path $kmpkgRoot "tools/bin/ninja.exe"
+          if (Test-Path $toolsNinja) {
+            Remove-Item -Force $toolsNinja
+            Copy-Item -Force $ninja $toolsNinja
+          }
+          echo "KMPKG_HOME=$kmpkgRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "$kmpkgRoot" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "KMPKG_CMAKE=$kmpkgRoot/scripts/buildsystems/kmpkg.cmake" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "KMPKG_FORCE_SYSTEM_BINARIES=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "KMPKG_KEEP_ENV_VARS=PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CMAKE_MAKE_PROGRAM=$ninja" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Dump environment
+        run: |
+          Write-Host "=== Environment Dump ==="
+          Write-Host "OS: $((Get-CimInstance Win32_OperatingSystem).Caption) $((Get-CimInstance Win32_OperatingSystem).OSArchitecture)"
+          Write-Host "CMAKE_MAKE_PROGRAM=$env:CMAKE_MAKE_PROGRAM"
+          $tools = @('cmake', 'ninja', 'git', 'python', 'curl', 'tar', 'cl', 'link', 'kmpkg')
+          foreach ($tool in $tools) {
+            $path = Get-Command $tool -ErrorAction SilentlyContinue
+            if ($path) {
+              $ver = & $tool --version 2>&1 | Select-Object -First 1
+              Write-Host " ${tool}: $($path.Source) ($ver)"
+            } else {
+              Write-Host " ${tool}: NOT FOUND"
+            }
+          }
+          Write-Host "=== End ==="
+
+      - name: Configure
+        run: |
+          if (-not (Get-Command cl -ErrorAction SilentlyContinue)) {
+            throw "cl.exe not on PATH after msvc-dev-cmd"
+          }
+          $ninja = $env:CMAKE_MAKE_PROGRAM
+          if (-not $ninja) {
+            $ninja = (Get-Command ninja -ErrorAction Stop).Source
+          }
+          if (-not (Test-Path $ninja)) {
+            throw "ninja not found at $ninja"
+          }
+          & $ninja --version | Out-Host
+          cmake -S . -B build `
+            -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_CXX_COMPILER=cl `
+            -DCMAKE_MAKE_PROGRAM="$ninja" `
+            -DCMAKE_TOOLCHAIN_FILE="$env:KMPKG_CMAKE" `
+            -DKMCMAKE_BUILD_TEST=ON
+
+      - name: Build
+        run: |
+          if (-not (Get-Command nproc -ErrorAction SilentlyContinue)) {
+            function global:nproc { [Environment]::ProcessorCount }
+          }
+          cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -j1
+
+      - name: Gather kmpkg logs
+        if: failure()
+        run: |
+          $kmpkgRoot = $env:KMPKG_HOME
+          if (-not $kmpkgRoot) { return }
+          $logDir = Join-Path $env:RUNNER_TEMP "ci-logs"
+          $null = New-Item -ItemType Directory -Path $logDir -Force
+          $buildtrees = Join-Path $kmpkgRoot "buildtrees"
+          if (Test-Path $buildtrees) {
+            Get-ChildItem -Path $buildtrees -Recurse -Filter *.log | ForEach-Object {
+              $rel = $_.FullName.Substring($kmpkgRoot.Length + 1)
+              $dest = Join-Path $logDir $rel
+              $null = New-Item -ItemType Directory -Path (Split-Path $dest -Parent) -Force
+              Copy-Item $_.FullName $dest
+            }
+          }
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msvc-logs
+          path: |
+            build/CMakeFiles/CMakeOutput.log
+            build/CMakeFiles/CMakeError.log
+            build/Testing/Temporary/
+            ${{ runner.temp }}/ci-logs/
+          if-no-files-found: ignore

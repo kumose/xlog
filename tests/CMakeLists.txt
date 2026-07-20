@@ -1,6 +1,4 @@
 # Copyright (C) Kumo inc. and its affiliates.
-# Author: Jeff.li lijippy@163.com
-# All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,41 +15,145 @@
 
 configure_file(${PROJECT_SOURCE_DIR}/tests/config.h.in ${PROJECT_SOURCE_DIR}/tests/config.h @ONLY)
 
-set(xlog_test_sources
-    test_misc
-    test_async
-    test_backtrace
-    test_bin_to_hex
-    test_cfg
-    test_circular_q
-    test_create_dir
-    test_custom_callbacks
-    test_daily_logger
-    test_dup_filter
-    test_errors
-    test_eventlog
-    test_file_helper
-    test_file_logging
-    test_fmt_helper
-    test_macros
-    test_mpmc_q
-    test_pattern_formatter
-    test_ringbuffer
-    test_stdout_api
-    test_stopwatch
-    test_time_point
-    test_timezone
-    test_registry
-    test_xlog_macros
+find_package(GTest REQUIRED)
+
+kmcmake_cc_library(
+        NAMESPACE xlog
+        NAME test_support
+        SOURCES
+        scoped_mock_log.cc
+        test_helpers.cc
+        test_matchers.cc
+        LINKS
+        xlog::xlog_static
+        GTest::gmock
+        GTest::gtest
+        ${KMCMAKE_DEPS_LINK}
+        PLINKS
+        xlog::xlog_static
+        GTest::gmock
+        GTest::gtest
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-foreach(test_name ${xlog_test_sources})
-    kmcmake_cc_test(
-        NAME ${test_name}
-        MODULE ${PROJECT_NAME}
-        SOURCES ${test_name}.cpp main.cpp utils.cpp
+kmcmake_cc_test(
+        NAME fnmatch_test
+        MODULE base
+        SOURCES fnmatch_test.cc
         CXXOPTS ${KMCMAKE_CXX_OPTIONS}
-        LINKS ${PROJECT_NAME}_static
-        DEPS ${PROJECT_NAME}_static
+        LINKS
+        GTest::gmock
+        GTest::gtest
+        xlog::xlog_static
+        ${KMCMAKE_DEPS_LINK}
+)
+
+kmcmake_cc_test(
+        NAME scoped_mock_log_test
+        MODULE log
+        SOURCES scoped_mock_log_test.cc
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+        LINKS
+        GTest::gmock
+        GTest::gtest
+        xlog::test_support_static
+        xlog::xlog_static
+        ${KMCMAKE_DEPS_LINK}
+)
+
+kmcmake_cc_test(
+        NAME log_basic_test
+        MODULE log
+        SOURCES log_basic_test.cc
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+        LINKS
+        GTest::gmock
+        GTest::gtest
+        xlog::test_support_static
+        xlog::xlog_static
+        ${KMCMAKE_DEPS_LINK}
+)
+
+kmcmake_cc_test(
+        NAME check_test
+        MODULE log
+        SOURCES check_test.cc
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+        LINKS
+        GTest::gmock
+        GTest::gtest
+        xlog::test_support_static
+        xlog::xlog_static
+        ${KMCMAKE_DEPS_LINK}
+)
+
+set(XLOG_LOG_TESTS
+        log_format_test
+        log_sink_test
+        log_conditions_test
+        log_modifier_methods_test
+        log_api_extension_test
+        strerror_test
+        utility_test
+        log_sink_file_test
+        stderr_threshold_test
+)
+
+foreach (test ${XLOG_LOG_TESTS})
+    kmcmake_cc_test(
+            NAME ${test}
+            MODULE log
+            SOURCES ${test}.cc
+            CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+            LINKS
+            GTest::gmock
+            GTest::gtest
+            xlog::test_support_static
+            xlog::xlog_static
+            ${KMCMAKE_DEPS_LINK}
     )
-endforeach()
+endforeach ()
+
+# Compile-time gates (separate TUs / defines).
+kmcmake_cc_test(
+        NAME min_log_level_test
+        MODULE log
+        SOURCES min_log_level_test.cc
+        DEFINES XLOG_MIN_LOG_LEVEL=3
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+        LINKS
+        GTest::gmock
+        GTest::gtest
+        xlog::test_support_static
+        xlog::xlog_static
+        ${KMCMAKE_DEPS_LINK}
+)
+
+kmcmake_cc_test(
+        NAME strip_log_test
+        MODULE log
+        SOURCES strip_log_test.cc
+        DEFINES XLOG_STRIP_LOG=1
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+        LINKS
+        GTest::gmock
+        GTest::gtest
+        xlog::test_support_static
+        xlog::xlog_static
+        ${KMCMAKE_DEPS_LINK}
+)
+
+kmcmake_cc_test(
+        NAME max_vlog_verbosity_test
+        MODULE log
+        SOURCES max_vlog_verbosity_test.cc
+        DEFINES XLOG_MAX_VLOG_VERBOSITY=1
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
+        LINKS
+        GTest::gmock
+        GTest::gtest
+        xlog::test_support_static
+        xlog::xlog_static
+        ${KMCMAKE_DEPS_LINK}
+)

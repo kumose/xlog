@@ -12,153 +12,158 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// AI: This file is a human/AI-readable summary of the project's public API and
-// AI: design principles. AI agents should read this instead of scanning all
-// AI: source files. For dependency libraries, read their skills.h similarly.
-//
-// AI: Style: triple-slash Doxygen comments for all entries.
+// AI: This file is a human/AI-readable summary of xlog. Read THIS and
+// AI: docs/AI.md + docs/logging.md BEFORE scanning all sources.
+// AI: Style: triple-slash Doxygen comments; lines starting with "AI:" are
+// AI: instructions for agents (constraints + design invariants).
 
 #pragma once
 
 /// @defgroup project_summary Project Summary
-/// @brief xlog — C++ logging library with XLOG/TLOG/ZLOG macro families
+/// @brief xlog — absl/glog-style logging (stream / fmt / printf)
+///
+/// @brief Purpose
+/// AI: Minimal C++ logging library with XLOG (ostream), TLOG (fmt), ZLOG (printf),
+/// AI: XCHECK*, VLOG variants, multi-set LogSinkRegistry (no remove), and setup_*
+/// AI: helpers. Prefer snake_case in new xlog code. Umbrella: <xlog/logging.h>.
+///
+/// @brief Read order for AI agents
+/// AI: 1) xlog/skills.h (this file)
+/// AI: 2) docs/AI.md (constraints + xlog design prompts)
+/// AI: 3) docs/logging.md / docs/logging_CN.md (architecture detail)
+/// AI: 4) Only then open specific .h/.cc for the task
+///
+/// @brief Naming / style
+/// AI: Prefer snake_case for functions/members in xlog/. Match nearby file style.
+/// AI: Do not reformat unrelated code. Do not add JSON sinks / vmodule / in-tree
+/// AI: stacktrace unless the user explicitly asks (those are deferred / out of scope).
+/// AI: Local commits only when asked; git commit via /usr/bin/git -F file if wrapper
+/// AI: rejects --trailer.
+/// @}
 
-/// @brief Project name
-/// AI: xlog
+/// @defgroup hot_path Hot path
+/// @{
+/// @brief Pipeline
+/// AI: macro → LogMessage (fill LogEntry + body buffer) → flush →
+/// AI: log_to_sinks → default LogSinkSet::do_log →
+/// AI: format_log (once) → send to extras + set sinks → stderr_threshold branch.
+///
+/// @brief LogEntry
+/// AI: severity, file/line, timestamp, tid/pid, verbose_level, buffer (raw body),
+/// AI: format_buffer (after format_log; what sinks write).
+/// @}
 
-/// @brief Description
-/// AI: xlog is a C++ logging library with three macro families:
-/// AI:   XLOG (stream <<), TLOG (fmt {}), ZLOG (printf %)
-/// AI: Each family has _IF / _EVERY_N / _ONCE / _FIRST_N / _LEVEL / _EVERY_POW_2 / _EVERY_N_SEC variants,
-/// AI: XCHECK/TCHECK/ZCHECK assertions, debug-only D* variants (release no-op),
-/// AI: runtime level control, and optional upstream adapters for glog/turbo/abseil.
+/// @defgroup two_layers Two extension layers (CRITICAL)
+/// @{
+/// @brief LogSink — destination only
+/// AI: Override send/flush. Consume already-formatted format_buffer.
+/// AI: Built-ins: DefaultSink, NullSink, AnsiColorSink, RotatingFileSink,
+/// AI: DailyFileSink, HourlyFileSink.
+/// AI: NEVER put shared layout / prefix rewriting in every LogSink::send when
+/// AI: multiple sinks should share one format — that is O(N) waste.
+///
+/// @brief LogSinkSet — format unlocked, then lock + dispatch
+/// AI: do_log: format_log on caller thread (NO set lock) → lock → dispatch_locked
+/// AI:   (sink send/flush + stderr_threshold). Built-in sinks have NO per-sink mutex.
+/// AI: Re-entrant XLOG from send() uses TLS guard: no second lock, stderr only.
+/// AI: Override format_log (layout) or dispatch_locked (fan-out). FormatOnlySinkSet
+/// AI: skips I/O in dispatch_locked. Register custom sets via add_log_sink_set.
+///
+/// @brief Registry
+/// AI: LogSinkRegistry: id → LogSinkSet, one default, NO remove.
+/// AI: add_log_sink / add_log_sinks build a plain LogSinkSet today.
+/// AI: Custom set subclasses need registry ownership of unique_ptr<LogSinkSet>
+/// AI: (same immortal lifetime). set_default_sink(id) switches process default.
+/// AI: Hot path may keep raw LogSinkSet* after set_default.
+/// @}
 
-/// @brief Quick API (alias — use xlog/logging.h for macros, xlog/xlog.h for logger API)
-/// AI: --- Log level ---
-/// AI:   xlog::log_level()  = XLOG_LEVEL_TRACE | DEBUG | INFO | WARN | ERROR | FATAL | OFF;
-/// AI:   xlog::vlog_level() = n;  // verbose at VXLOG/TVLOG/VZLOG when n >= 1
-/// AI:
-/// AI: --- Output file ---
-/// AI:   auto logger = xlog::daily_logger_mt("app", "logs/daily.log");
-/// AI:   (or rotating_logger_mt, basic_logger_sg, ... see xlog/sinks/)
-/// AI:   xlog::set_default_logger(logger);
-/// AI:
-/// AI: --- Pattern ---
-/// AI:   logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [%s:%#] %v");
-/// AI:
-/// AI: --- Sync / Async ---
-/// AI:   // default is sync; for async wrap before use:
-/// AI:   logger = xlog::create_async<xlog::sinks::daily_file_sink_mt>("logs/daily.log");
-/// AI:
-/// AI: --- Logging ---
-/// AI:   XLOG(INFO) << "stream " << 42;
-/// AI:   TLOG(INFO, "fmt {}", 42);
-/// AI:   ZLOG(INFO, "printf %d", 42);
-/// AI:   XPLOG(INFO) << "append errno";  // TPLOG/ZPLOG also
-/// AI:   VXLOG(1) << "verbose when vlog_level >= 1";  // TVLOG/VZLOG also
-/// AI:   DXLOG(INFO) << "debug only (no-op in release)";
-/// AI:   DTLOG(INFO, "fmt") / DZLOG(INFO, "printf %d") — debug only, release no-op
-/// AI:   XLOG_IF(INFO, cond) << "conditional";
-/// AI:   TLOG_IF(INFO, cond, "fmt") / ZLOG_IF(INFO, cond, "printf %d")
-/// AI:   XLOG_EVERY_N(INFO, 2) << "every 2nd call";
-/// AI:   TLOG_EVERY_N(INFO, 2, "fmt") / ZLOG_EVERY_N(INFO, 2, "printf %d")
-/// AI:   XCHECK_EQ(a, b) << "assert a == b";
-/// AI:   TCHECK_EQ(a, b) / ZCHECK_EQ(a, b) — all three families
-/// AI:
-/// AI: --- Upstream adapters ---
-/// AI:   #include <xlog/upstream/glog.h>
-/// AI:   xlog::upstream::enable_glog(logger);  // LOG(INFO) → xlog
-/// AI:   xlog::upstream::disable_glog();
-/// AI:   (also turbo and absl variants)
+/// @defgroup filters Filters (orthogonal)
+/// @{
+/// @brief min_log_level
+/// AI: Applied in LogMessage::flush. Drops the entry before sinks.
+/// AI: FATAL still aborts in flush even when filtered out.
+///
+/// @brief verbosity / VLOG
+/// AI: XVLOG/TVLOG/ZVLOG are severity INFO with verbose_level; gate vs verbosity().
+/// AI: No vmodule. Optional XLOG_MAX_VLOG_VERBOSITY compile-out.
+/// AI: Prefix may mark Vn. EVERY_N / FIRST_N / ONCE / EVERY_POW_2 / EVERY_N_SEC shared.
+///
+/// @brief Compile-time
+/// AI: XLOG_MIN_LOG_LEVEL, XLOG_STRIP_LOG (non-fatal → NullStream; FATAL/CHECK still die).
+///
+/// @brief stderr_threshold
+/// AI: Applied in LogSinkSet::do_log AFTER sinks. Not the same as min_log_level.
+/// AI: if (severity >= stderr_threshold) { write_to_stderr; if FATAL abort; }
+/// AI: threshold always <= FATAL so FATAL always enters; no on_fatal_error.
+/// AI: When a sink already owns stderr, set threshold to FATAL to avoid double-print.
+/// AI: Defaults: initialize / DefaultSink path → FATAL; file-only setup_* → ERROR;
+/// AI: setup_color_stdout → ERROR; setup_stderr / color_stderr / file+color → FATAL.
+/// @}
 
-/// @brief Writer layer
-/// AI: spdlog-derived: logger, pattern_formatter, sinks (file/rotating/daily/null/color/systemd),
-/// AI: async thread pool, registry, bundled fmt 12.1.0.
+/// @defgroup macros Public macros / headers
+/// @{
+/// @brief logging.h — umbrella (check, initialize, setup, tlog, utility, xlog, zlog)
+/// @brief XLOG / DXLOG — operator<< ; DFATAL; .no_prefix(); XPLOG / .with_perror()
+/// @brief TLOG / DTLOG — fmt::format via print
+/// @brief ZLOG / DZLOG — printf via fmt::sprintf
+/// @brief XVLOG / TVLOG / ZVLOG (+ D* and EVERY_* variants) — verbose INFO
+/// @brief XCHECK* / DXCHECK* — fatal checks
+/// @brief hex_string — utility.h helpers for << / {}
+/// @}
 
+/// @defgroup setup Setup helpers
+/// @{
+/// @brief setup.h
+/// AI: initialize_log + register default set + set stderr_threshold appropriately.
+/// AI: Prefer setup_* for apps; registry APIs for tests / multi-set (ScopedMockLog).
+/// AI: make_default_log_filename(argv0) → logs/<basename>_log.txt
+/// @}
+
+/// @defgroup design_rules Design rules for agents
+/// @{
+/// @brief Invariants
+/// AI: 1. Format at set scope; write at sink scope.
+/// AI: 2. One format_log pass per entry for the whole set (+ extras).
+/// AI: 3. stderr mirror is set policy (write_to_stderr), not a recursive registry hop.
+/// AI: 4. FATAL terminates in do_log threshold branch or flush early-filter paths.
+/// AI: 5. Registry append-only; switch with set_default_sink.
+/// AI: 6. Default = ordered sync under one set mutex. Async is NOT built-in:
+/// AI:    users subclass LogSinkSet (e.g. AsyncLogSinkSet): format unlocked →
+/// AI:    enqueue; worker thread runs existing sink send/flush + stderr/FATAL.
+/// AI:    Do not assume reordering is OK unless the app opts into async.
+/// AI: 7. Stacktrace: out of scope for this repo (separate project later).
+/// AI: 8. ref/ is reference / gitignored downloads — do not treat as production API.
+/// AI: See docs/logging.md section "Sync by default, async when you need it".
+/// @}
+
+/// @defgroup source_map Source map (xlog/)
+/// @{
+/// @brief logging.h initialize.h setup.h — app entry / config / one-shot setup
+/// @brief xlog.h tlog.h zlog.h check.h — macros
+/// @brief log_entry.h log_severity.h log_sink.h log_sink_set.h — core types
+/// @brief format.h / format.cc — default xlog_format
+/// @brief internal/log_message.* — LogMessage / flush
+/// @brief internal/conditions.* nullstream.h voidify.h strerror.* — macro support
+/// @brief sinks/* — concrete LogSink implementations
+/// AI: Default set (create_default): DefaultSink + AndroidLogSink (__ANDROID__)
+/// AI:   + WindowsDebuggerLogSink (_WIN32). Platform sinks are siblings in the
+/// AI:   default LogSinkSet, not inside DefaultSink::send.
+/// @brief utility.h — write_to_stderr, hex_string, thread identify
+/// @brief tests/ — gtest; many TUs provide their own main + LogTestEnvironment
+/// @}
+
+/// @defgroup kmcmake_build Build (kmcmake)
+/// @{
 /// @brief Build system
-/// AI: Uses kmcmake (https://github.com/kumose/kmcmake) as the CMake framework.
-/// AI: Framework modules live under kmcmake/ — DO NOT MODIFY.
-/// AI: User configuration lives under cmake/ — MODIFY FREELY.
-
-/// @brief Directory layout
-/// AI: .
-/// AI: ├── CMakeLists.txt              # Entry point
-/// AI: ├── cmake/                      # User configuration (modifiable)
-/// AI: │   ├── <project>_user_option.cmake   # User overrides
-/// AI: │   ├── <project>_deps.cmake          # Dependencies
-/// AI: │   ├── <project>_cxx_config.cmake    # C++ flags aggregation
-/// AI: │   ├── <project>_cpack_config.cmake  # Packaging config
-/// AI: │   └── <project>_config.cmake.in     # CMake export template
-/// AI: ├── kmcmake/                    # Framework (update-safe)
-/// AI: │   ├── kmcmake_module.cmake    # Entry point
-/// AI: │   ├── kmcmake_option.cmake    # Global options
-/// AI: │   ├── arch/                   # Per-CPU SIMD detection + level
-/// AI: │   └── tools/                  # Build functions (library, test, etc.)
-/// AI: ├── <project>/                  # Source code
-/// AI: │   ├── CMakeLists.txt
-/// AI: │   ├── *.h / *.cc
-/// AI: │   ├── version.h (generated)
-/// AI: │   └── skills.h (this file)
-/// AI: ├── tests/
-/// AI: ├── benchmark/
-/// AI: └── examples/
-
-/// @brief Build flow
-/// AI: 1. project() sets name + version
-/// AI: 2. include(kmcmake_module) loads all framework modules
-/// AI: 3. include(<project>_user_option OPTIONAL) — user overrides
-/// AI: 4. include(<project>_deps) — find_package deps
-/// AI: 5. include(<project>_cxx_config) — sets KMCMAKE_CXX_OPTIONS
-/// AI: 6. configure_file(version.h.in) — generates version.h
-/// AI: 7. add_subdirectory(<project>) — builds main sources
-/// AI: 8. add_subdirectory(tests) / benchmark / examples — optional
-
-/// @brief SIMD architecture
-/// AI: Detection is per-CPU-architecture, each in arch/<arch>/:
-/// AI:   - kmcmake_arch_detect.cmake: probes hardware, exports KMCMAKE_<ARCH>_HAS_<FEAT>
-/// AI:   - kmcmake_arch_level.cmake: reads KMCMAKE_RUNTIME_SIMD_LEVEL, exports:
-/// AI:       KMCMAKE_ARCH_ENABLE_<FEAT>  (0/1 for version.h)
-/// AI:       KMCMAKE_SIMD_CXX_FLAGS       (compiler flags)
-/// AI: To override: set KMCMAKE_ARCH_ENABLE_<FEAT> to OFF in user_option.cmake
+/// AI: kmcmake framework under kmcmake/ — DO NOT MODIFY unless task targets it.
+/// AI: User CMake under cmake/ — MODIFY FREELY. Flags: KMCMAKE_CXX_OPTIONS.
+/// AI: Deps via kmpkg (fmt, gtest). Build: cmake --preset / build dir + ctest.
 /// @}
 
-/// @defgroup build_api CMake Build API
-/// AI: All target types are defined in kmcmake/tools/. See docs/AI.md for demos.
+/// @defgroup version_header Generated version.h
 /// @{
-/// @brief kmcmake_cc_library   — static + shared lib from same objects
-/// @brief kmcmake_cc_interface — header-only library
-/// @brief kmcmake_cc_binary    — executable
-/// @brief kmcmake_cc_object    — object library (no link)
-/// @brief kmcmake_cc_test      — test executable + ctest registration
-/// @brief kmcmake_cc_benchmark — benchmark executable
+/// @brief XLOG_VERSION_* / XLOG_VERSION_STRING
+/// @brief XLOG_SIMD_ENABLE_* / XLOG_GIT_* / XLOG_BUILD_*
 /// @}
 
-/// @defgroup config_vars Configuration Variables
-/// AI: Output variables available after include(<project>_cxx_config)
-/// @{
-/// @brief KMCMAKE_BASE_CXX_FLAGS  — compiler flags determined by compiler ID
-/// @brief KMCMAKE_SIMD_CXX_FLAGS  — SIMD flags from arch detection
-/// @brief KMCMAKE_RANDEN_FLAGS    — AES/hardware random flags
-/// @brief KMCMAKE_CXX_OPTIONS     — aggregated flags (BASE + SIMD + RANDEN)
-/// @brief KMCMAKE_ARCH_ENABLE_*   — per-feature SIMD enable as 0/1 integers
-/// @}
-
-/// @defgroup version_header Generated version.h Macros
-// The version.h file is generated from xlog/version.h.in
-// and contains the following compile-time macros:
-/// @{
-/// @brief XLOG_VERSION_MAJOR / _MINOR / _PATCH  — version components
-/// @brief XLOG_VERSION_STRING  — e.g. "0.0.5"
-/// @brief XLOG_SIMD_LEVEL  — target SIMD level string
-/// @brief XLOG_SIMD_ENABLE_SSE..AVX512F  — 0 or 1 per feature
-/// @brief XLOG_CXX_COMPILER_ID     — compiler name
-/// @brief XLOG_CXX_COMPILER_VERSION — compiler version
-/// @brief XLOG_BUILD_TYPE_STRING       — Debug/Release/etc
-/// @brief XLOG_BUILD_SYSTEM        — OS distro name
-/// @brief XLOG_GIT_COMMIT_HASH     — full git commit
-/// @brief XLOG_GIT_VERSION_STRING  — "tag-hash[-dirty]"
-/// @}
-
-// AI: End of skills.h — AI assistants should prioritize this file and docs/AI.md
-// AI: over reading all source files. For third-party dependencies, look for their
-// AI: skills.h at <dep>/include/<dep>/skills.h or similar location.
+// AI: End of skills.h — prefer this + docs/AI.md + docs/logging.md over full tree scans.
