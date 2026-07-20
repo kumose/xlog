@@ -17,6 +17,7 @@
 #include "test_helpers.h"
 
 #include <chrono>
+#include <regex>
 #include <string>
 #include <string_view>
 
@@ -36,13 +37,21 @@ namespace {
 
     using ::testing::AllOf;
     using ::testing::HasSubstr;
-    using ::testing::MatchesRegex;
     using ::testing::StartsWith;
     using ::xlog::LogEntry;
     using ::xlog::LogSeverity;
     using ::xlog::MockLogDefault;
     using ::xlog::ScopedMockLog;
     using ::xlog::test::FormattedMessage;
+
+    // gtest MatchesRegex uses a reduced engine on MSVC (no [], {}); use std::regex.
+    // FormattedMessage matchers see string_view; regex_match has no string_view
+    // overload until C++23, so match via iterators (works for string too).
+    MATCHER_P(MatchesStdRegex, pattern, "") {
+        const std::regex re(std::string(pattern), std::regex::ECMAScript);
+        *result_listener << "against pattern \"" << pattern << "\"";
+        return std::regex_match(arg.begin(), arg.end(), re);
+    }
 
     class LogFormatTest : public ::testing::Test {
     protected:
@@ -121,7 +130,7 @@ namespace {
         xlog::xlog_format(e);
         const std::string out(e.format_buffer.data(), e.format_buffer.size());
         // LYYYY-MM-DDThh:mm:ss.us±hh:mm ...
-        EXPECT_THAT(out, MatchesRegex(
+        EXPECT_THAT(out, MatchesStdRegex(
                              "[TDIWEF][0-9]{4}-[0-9]{2}-[0-9]{2}T"
                              "[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}"
                              "[+-][0-9]{2}:[0-9]{2} .*foo\\.cc:42] x\n"));
@@ -132,7 +141,7 @@ namespace {
         EXPECT_CALL(
             log, Send(FormattedMessage(AllOf(
                      HasSubstr("foo message"),
-                     MatchesRegex("I[0-9]{4}-.*] foo message\n")))));
+                     MatchesStdRegex("I[0-9]{4}-.*] foo message\n")))));
         log.StartCapturingLogs();
         XLOG(INFO) << "foo message";
     }

@@ -44,7 +44,12 @@ namespace {
             fs::create_directories(dir_);
         }
 
-        void TearDown() override { fs::remove_all(dir_); }
+        void TearDown() override {
+            // RotatingFileSink stays registered (immortal); Windows may still
+            // hold the log file open — ignore cleanup errors.
+            std::error_code ec;
+            fs::remove_all(dir_, ec);
+        }
 
         std::string ReadFile(const fs::path &p) {
             std::ifstream in(p);

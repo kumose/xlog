@@ -29,12 +29,12 @@ namespace xlog {
 
     namespace {
         std::string Join(const BaseFilename &base, std::string_view stem_suffix) {
+            const std::string filename =
+                fmt::format("{}{}{}", base.basename, stem_suffix, base.extension);
             if (base.directory.empty()) {
-                return fmt::format("{}{}{}", base.basename, stem_suffix,
-                                   base.extension);
+                return filename;
             }
-            return fmt::format("{}/{}{}{}", base.directory, base.basename,
-                               stem_suffix, base.extension);
+            return (std::filesystem::path(base.directory) / filename).string();
         }
     }  // namespace
 
