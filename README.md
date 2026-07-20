@@ -40,10 +40,20 @@ int main() {
 | `TLOG` / `DTLOG` | `fmt::format` (`print`) |
 | `ZLOG` / `DZLOG` | printf (`fmt::sprintf`) |
 | `XCHECK*` / `DXCHECK*` | fatal checks |
+| `xlog::hex_string(...)` | hex helpers for `<<` / `{}` (see `utility.h`) |
 
 **Sinks:** `LogSinkRegistry` holds named sink sets; only one is default.
-`add_log_sink` / `add_log_sinks` register sets; `set_default(id)` switches.
+`add_log_sink` / `add_log_sinks` register sets; `set_default_sink(id)` switches.
 There is no remove (hot path can use a raw `LogSinkSet*`).
+
+**Setup helpers** (`<xlog/setup.h>` / via `logging.h`):
+```cpp
+xlog::setup_color_stderr();
+xlog::setup_rotating_file(xlog::make_default_log_filename(argv[0]));
+// also: setup_daily_file / setup_hourly_file / setup_rotating_file_and_color_stderr
+```
+Sink types: `DefaultSink`, `NullSink`, `AnsiColorSink`, `RotatingFileSink`,
+`DailyFileSink`, `HourlyFileSink`.
 
 **Compile-time controls (optional):**
 - `XLOG_MIN_LOG_LEVEL=<int>` — gate macros below that `LogSeverity` (0=TRACE … 5=FATAL)

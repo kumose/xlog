@@ -74,8 +74,23 @@ namespace xlog {
         std::lock_guard<std::mutex> lock(_sink_set_mutex);
         const uint32_t id = _seq_no++;
         std::vector<LogSink *> sinks;
-        sinks.push_back(sink.release());
+        sinks.push_back(sink.get());
+        _owned_sinks.push_back(std::move(sink));
         _sink_sets.emplace(id, std::make_unique<LogSinkSet>(sinks));
+        return id;
+    }
+
+    uint32_t LogSinkRegistry::add_log_sinks(
+        std::vector<std::unique_ptr<LogSink>> sinks) {
+        std::lock_guard<std::mutex> lock(_sink_set_mutex);
+        const uint32_t id = _seq_no++;
+        std::vector<LogSink *> raw;
+        raw.reserve(sinks.size());
+        for (auto &s : sinks) {
+            raw.push_back(s.get());
+            _owned_sinks.push_back(std::move(s));
+        }
+        _sink_sets.emplace(id, std::make_unique<LogSinkSet>(raw));
         return id;
     }
 

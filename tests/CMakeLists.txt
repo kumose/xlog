@@ -95,6 +95,8 @@ set(XLOG_LOG_TESTS
         log_modifier_methods_test
         log_api_extension_test
         strerror_test
+        utility_test
+        log_sink_file_test
 )
 
 foreach (test ${XLOG_LOG_TESTS})

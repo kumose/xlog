@@ -11,28 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// Umbrella header for typical application use:
-//
-//   #include <xlog/logging.h>
-//   xlog::initialize_log();
-//   XLOG(INFO) << "hello";
-//   XLOG(INFO).no_prefix() << "raw";
-//   XPLOG(ERROR) << "open failed";
-//   XVLOG(1) << "verbose";   // INFO if verbosity >= 1
-//   TVLOG(1, "x={}", 1);
-//   ZVLOG(1, "x=%d", 1);
-//   XVLOG_EVERY_N(1, 100) << COUNTER;
-//   TLOG(INFO, "x={}", 1);
-//   ZLOG(INFO, "x=%d", 1);
-//   XCHECK(ptr != nullptr);
 
 #pragma once
 
-#include <xlog/check.h>
-#include <xlog/initialize.h>
-#include <xlog/setup.h>
-#include <xlog/tlog.h>
-#include <xlog/utility.h>
-#include <xlog/xlog.h>
-#include <xlog/zlog.h>
+#include <cstdio>
+#include <string>
+#include <string_view>
+
+namespace xlog {
+namespace log_internal {
+
+    bool path_exists(std::string_view path);
+    bool create_directories(std::string_view dir);
+    bool rename_path(std::string_view from, std::string_view to);
+    bool remove_path(std::string_view path);
+    std::string parent_dir(std::string_view path);
+    size_t file_size_of(FILE *fp);
+    bool is_color_terminal(FILE *fp);
+
+}  // namespace log_internal
+}  // namespace xlog

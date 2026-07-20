@@ -24,13 +24,21 @@ kmcmake_cc_library(
         internal/conditions.cc
         internal/check_op.cc
         internal/strerror.cc
+        internal/fs_helper.cc
+        internal/append_file.cc
         internal/log_message.cc
         sinks/default_sink.cc
+        sinks/ansi_color_sink.cc
+        sinks/log_filename.cc
+        sinks/rotating_file_sink.cc
+        sinks/daily_file_sink.cc
+        sinks/hourly_file_sink.cc
         format.cc
         log_sink.cc
         log_sink_set.cc
         initialize.cc
         utility.cc
+        setup.cc
 
         CXXOPTS
         ${KMCMAKE_CXX_OPTIONS}
