@@ -4,8 +4,8 @@ on:
   workflow_call:
   workflow_dispatch:
 
-# Called from ci.yml. Env mirrors kumose/x-ci windows job; build uses VS so
-# the project matches kmpkg x64-windows (MSVC) packages instead of MinGW.
+# Called from ci.yml. Env mirrors kumose/x-ci windows job; build uses MSVC via
+# msvc-dev-cmd + Ninja so it matches kmpkg x64-windows (not MinGW / not a fixed VS year).
 jobs:
   windows-msvc:
     name: Windows MSVC
@@ -70,10 +70,14 @@ jobs:
           echo "KMPKG_FORCE_SYSTEM_BINARIES=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "KMPKG_KEEP_ENV_VARS=PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      # windows-latest now ships VS 2026 (v18); avoid hardcoding "Visual Studio 17 2022".
+      - uses: ilammy/msvc-dev-cmd@v1
+
       - name: Configure
         run: |
           cmake -S . -B build `
-            -G "Visual Studio 17 2022" -A x64 `
+            -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_TOOLCHAIN_FILE="$env:KMPKG_CMAKE" `
             -DKMCMAKE_BUILD_TEST=ON
 
@@ -82,10 +86,10 @@ jobs:
           if (-not (Get-Command nproc -ErrorAction SilentlyContinue)) {
             function global:nproc { [Environment]::ProcessorCount }
           }
-          cmake --build build --config Release --parallel
+          cmake --build build --parallel
 
       - name: Test
-        run: ctest --test-dir build -C Release --output-on-failure -j1
+        run: ctest --test-dir build --output-on-failure -j1
 
       - name: Gather kmpkg logs
         if: failure()

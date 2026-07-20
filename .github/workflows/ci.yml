@@ -22,6 +22,6 @@ jobs:
       skip-windows-arm64: true
       skip-linux-musl-arm64: true
 
-  # MSVC + kmpkg x64-windows (shared x-ci Windows job uses MinGW via Unix Makefiles preset).
+  # MSVC + kmpkg x64-windows (shared x-ci Windows job mixes MinGW with MSVC packages).
   windows-msvc:
     uses: ./.github/workflows/windows.yml
