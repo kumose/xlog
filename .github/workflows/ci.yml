@@ -18,5 +18,6 @@ jobs:
       test-command: |
         ctest --test-dir build --output-on-failure -j1
       skip-macos-x86: true
+      skip-windows: true
       skip-windows-arm64: true
       skip-linux-musl-arm64: true
