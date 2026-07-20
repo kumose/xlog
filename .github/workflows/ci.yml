@@ -14,7 +14,7 @@ jobs:
       config-command: |
         cmake --preset=default -DKMCMAKE_BUILD_TEST=ON
       build-command: |
-        cmake --build build -j$(nproc)
+        cmake --build build --parallel
       test-command: |
         ctest --test-dir build --output-on-failure -j1
       skip-macos-x86: true

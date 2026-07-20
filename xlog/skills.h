@@ -127,8 +127,13 @@
 /// AI: 3. stderr mirror is set policy (write_to_stderr), not a recursive registry hop.
 /// AI: 4. FATAL terminates in do_log threshold branch or flush early-filter paths.
 /// AI: 5. Registry append-only; switch with set_default_sink.
-/// AI: 6. Stacktrace: out of scope for this repo (separate project later).
-/// AI: 7. ref/ is reference / gitignored downloads — do not treat as production API.
+/// AI: 6. Default = ordered sync under one set mutex. Async is NOT built-in:
+/// AI:    users subclass LogSinkSet (e.g. AsyncLogSinkSet): format unlocked →
+/// AI:    enqueue; worker thread runs existing sink send/flush + stderr/FATAL.
+/// AI:    Do not assume reordering is OK unless the app opts into async.
+/// AI: 7. Stacktrace: out of scope for this repo (separate project later).
+/// AI: 8. ref/ is reference / gitignored downloads — do not treat as production API.
+/// AI: See docs/logging.md section "Sync by default, async when you need it".
 /// @}
 
 /// @defgroup source_map Source map (xlog/)

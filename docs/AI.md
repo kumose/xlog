@@ -68,11 +68,19 @@ No `on_fatal_error`. When a sink already owns stderr, set threshold to **FATAL**
 
 ## Out of scope (unless user explicitly asks)
 
+- Built-in async logger (users implement `AsyncLogSinkSet` — see logging.md)
 - JSON sinks / new heavy deps
 - vmodule
 - In-tree stacktrace (`ref/` downloads are reference only)
 - Editing `kmcmake/` framework files
 - Commits / push without explicit user request
+
+## Sync vs async (product rule)
+
+Default path: **ordered sync** (format unlocked → set mutex → sinks). That is
+intentional. Peak QPS past a few M/s on one lock means async or relaxed order —
+implemented by the **application** as a `LogSinkSet` subclass (format → MPSC →
+worker runs today’s file/stderr pipeline), not assumed by the library.
 
 ## AI Constraints
 

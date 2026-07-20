@@ -46,7 +46,13 @@ int main() {
 `add_log_sink` / `add_log_sinks` 注册，`set_default_sink(id)` 切换；不提供 remove。
 两层：`LogSink`（写出）与 `LogSinkSet`（一次 format + 扇出 +
 `stderr_threshold` / FATAL）。自定义排版应继承 `LogSinkSet` 重写 `format_log`。
-详见 [docs/logging_CN.md](./docs/logging_CN.md)。
+默认路径是 **有序同步**；要极致吞吐就自己写 `AsyncLogSinkSet`（format → 入队 →
+消费线程跑现有 sink）——见 [docs/logging_CN.md](./docs/logging_CN.md)
+《默认同步；异步是你自己的事》。
+
+**为什么不「做成 spdlog」？** 赛道不同：spdlog 卖异步 QPS；xlog 卖 glog 风格宏
+（CHECK/FATAL/EVERY_*/VLOG、三种正文）和说得清的默认同步。要哪套词汇选哪套；
+真需要吞吐再挂异步。
 
 **一键启动**（`<xlog/setup.h>` / `logging.h`）：
 ```cpp

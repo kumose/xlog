@@ -127,6 +127,43 @@ if (severity >= stderr_threshold) {
 `<xlog/setup.h>`：`initialize_log` + 注册默认 set + 设好 `stderr_threshold`。  
 应用优先用 setup；测试 / 多 set 切换用 registry（`ScopedMockLog` 会换 default set）。
 
+## 默认同步；异步是你自己的事
+
+默认热路径故意做成 **同步 + 全局有序**：
+
+```text
+各业务线程：format（不加锁）→ set 一把锁 → sinks + stderr
+```
+
+这是 glog/absl 风格日志该说清楚的合同：线程之间行序不乱跳，FATAL 走完写出路径再死，磁盘上「打了什么」可以推演。一把 set 锁打满时，每秒几百万条 format 已经摸到这类模型的天花板——再往上，不是 fmt 再聪明一点，而是 **放松顺序，或把 I/O 挪出业务线程**。
+
+我们 **不** 内置「大而全」异步日志：队列多深、满了丢还是堵、FATAL 要不要 drain 再 `abort`，那是业务决策，库不能替你猜。库给的是铰链：
+
+**继承 `LogSinkSet` → 自己的 `AsyncLogSinkSet`。**
+
+示意：
+
+```text
+生产线程（不要 set 锁）：
+  format_log(entry)          // 与今天一样，在调用线程、锁外
+  enqueue(已 format 的 entry) // MPSC / 环形队列 / 你们栈里现成的都行
+
+消费线程：
+  dequeue → 现有 Rotating / Daily / Hourly / Default 的 send+flush
+         → stderr_threshold / FATAL
+```
+
+文件 sink 继续单消费者，写侧仍可不加锁。宏、CHECK、`format_log` 都不用改——不是重写 xlog，只是换最后一公里。
+
+和 spdlog 比：他们用内置异步刷宣传 QPS；xlog 赢在 **宏语义与可预期**（stream + fmt + printf、CHECK/FATAL、EVERY_*、VLOG、`stderr_threshold`、set 层一次排版）。两边都要？宏留下，真需要吞吐时再挂一个 `AsyncLogSinkSet`。极致调参留在 **你的队列** 里——这是扩展点，不是功能空洞。
+
+## 对标（给人看，也给 AI）
+
+| 对手 | 同一赛道？ | 说明 |
+|------|------------|------|
+| glog / absl / turbo Log | **是** | 同步、有序、FATAL/CHECK 词汇 —— xlog 主场 |
+| spdlog | **不是** | 异步峰值 vs Google 风格宏；别用一张 KPI 表硬刚 |
+
 ## 设计要点（短）
 
 1. **排版在 set，写出在 sink。**
@@ -134,3 +171,4 @@ if (severity >= stderr_threshold) {
 3. **stderr 镜像是 set 策略**（threshold 分支），不要和「再挂一个会递归的 sink」搞混；内置 `DefaultSink` 本身仍是普通 stderr sink。
 4. **FATAL 必终止**：进 threshold 分支，或在 `flush` 被滤掉时 abort；不要指望 sink 去 abort。
 5. Registry **只增不删**，用 `set_default_sink` 切换。
+6. **默认 = 有序同步。** 异步是用户的 `LogSinkSet` 子类（format 后入队；消费线程跑今天的 sink 管线）——除非应用主动选择，否则绝不假定日志可以乱序。

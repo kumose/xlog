@@ -47,7 +47,14 @@ int main() {
 There is no remove (hot path can use a raw `LogSinkSet*`).
 Two layers: `LogSink` (I/O) vs `LogSinkSet` (format once + fan-out +
 `stderr_threshold` / FATAL). Custom layouts → subclass `LogSinkSet` and
-override `format_log`. See [docs/logging.md](./docs/logging.md).
+override `format_log`. Default path is **ordered sync**; extreme throughput is
+your own `AsyncLogSinkSet` (format → enqueue → worker runs today’s sinks) —
+see [docs/logging.md](./docs/logging.md) (*Sync by default, async when you need it*).
+
+**Why not “just be spdlog”?** Different race: spdlog sells async QPS; xlog sells
+glog-style macros (CHECK/FATAL/EVERY_*/VLOG, three body styles) with a clear
+ordered default. Pick the vocabulary you want; hang async only when the service
+needs it.
 
 **Setup helpers** (`<xlog/setup.h>` / via `logging.h`):
 ```cpp

@@ -140,6 +140,55 @@ No vmodule. Stack traces are out of tree (separate project).
 `stderr_threshold` appropriately. Prefer these for apps; use registry APIs for
 tests / multi-set switching (`ScopedMockLog` swaps the default set).
 
+## Sync by default, async when *you* need it
+
+xlog’s default path is deliberately **synchronous and globally ordered**:
+
+```text
+each thread:  format (unlocked) → one set mutex → sinks + stderr
+```
+
+That is the honest contract for a glog/absl-style logger: lines do not leapfrog
+each other across threads, FATAL means die after the write path, and you can
+reason about “what hit the disk.” On a contended set lock, a few million
+formatted lines per second is already near the ceiling of that model — further
+gains are not “smarter fmt,” they are **relaxing order or moving I/O off-thread**.
+
+We do **not** ship a kitchen-sink async logger. The library refuses to guess your
+queue depth, drop policy, or whether FATAL must drain before `abort`. Those are
+product decisions. What we *do* ship is the hinge:
+
+**Subclass `LogSinkSet` → your own `AsyncLogSinkSet`.**
+
+Sketch:
+
+```text
+producer threads (no set lock):
+  format_log(entry)          // same as today — unlocked, on the caller
+  enqueue(formatted entry)   // MPSC / ring / whatever fits your shop
+
+consumer thread:
+  dequeue → existing Rotating/Daily/Hourly/Default send+flush
+         → stderr_threshold / FATAL handling
+```
+
+File sinks stay single-consumer and can remain lock-free on the write side.
+Macros, CHECK, and `format_log` do not change. You are not rewriting xlog — you
+are swapping the last mile.
+
+Compare to spdlog: they win marketing QPS with async baked in. xlog wins on
+**macro semantics and predictability** (stream + fmt + printf, CHECK/FATAL,
+EVERY_*, VLOG, `stderr_threshold`, set-level format). Want both? Keep the
+macros; hang an `AsyncLogSinkSet` when your service actually needs the
+throughput. Extreme tuning stays in *your* queue — that is a feature, not a gap.
+
+## Positioning (humans & agents)
+
+| Peer | Same race? | Notes |
+|------|------------|--------|
+| glog / absl / turbo Log | **Yes** | Sync, ordered, FATAL/CHECK vocabulary — xlog’s home turf |
+| spdlog | **Different race** | Async peaks vs Google-style macros; don’t score them on one KPI |
+
 ## Design rules (short)
 
 1. **Format at set scope, write at sink scope.**
@@ -150,3 +199,6 @@ tests / multi-set switching (`ScopedMockLog` swaps the default set).
 4. **FATAL always terminates** if it reaches the threshold branch or is filtered
    in `flush`; do not rely on sinks to abort.
 5. Registry sets are **append-only**; switch with `set_default_sink`.
+6. **Default = ordered sync.** Async is a user `LogSinkSet` subclass (enqueue
+   after format; consumer runs today’s sink pipeline) — never assume the world
+   can reorder logs unless the app opts in.

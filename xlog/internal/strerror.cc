@@ -20,10 +20,9 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
-#include <type_traits>
 
 // strerror_r is POSIX (not in the C++ standard); use the C header.
-// musl / bionic: XSI (int); glibc with _GNU_SOURCE: GNU (char*).
+// musl / bionic / macOS: XSI (int); glibc with _GNU_SOURCE: GNU (char*).
 #include <string.h>
 
 namespace xlog {
@@ -40,6 +39,21 @@ namespace {
     private:
         int saved_;
     };
+
+#if !defined(_WIN32)
+    // Dispatch on strerror_r's return type via overload (portable on
+    // musl/mac where if-constexpr still type-checks the discarded arm).
+    inline const char *StrErrorRResult(int rc, char *buf) {
+        if (rc != 0) {
+            buf[0] = '\0';
+        }
+        return buf;
+    }
+
+    inline const char *StrErrorRResult(char *str, char *buf) {
+        return str != nullptr ? str : buf;
+    }
+#endif
 
     const char *StrErrorAdaptor(int errnum, char *buf, size_t buflen) {
         if (buflen == 0) {
@@ -59,18 +73,7 @@ namespace {
         }
         return buf;
 #else
-        // musl / Android bionic: XSI strerror_r (returns int).
-        // glibc (_GNU_SOURCE): GNU strerror_r (returns char*).
-        // Both branches must compile; only one runs per platform.
-        auto ret = strerror_r(errnum, buf, buflen);
-        if constexpr (std::is_same_v<decltype(ret), int>) {
-            if (ret != 0) {
-                buf[0] = '\0';
-            }
-            return buf;
-        } else {
-            return ret != nullptr ? ret : buf;
-        }
+        return StrErrorRResult(strerror_r(errnum, buf, buflen), buf);
 #endif
     }
 
