@@ -1,14 +1,11 @@
-name: Windows CI
+name: Windows MSVC
 
 on:
-  push:
-    branches: [master, refine_dev, dev]
-  pull_request:
-    branches: [master]
+  workflow_call:
   workflow_dispatch:
 
-# MSVC path aligned with kumose/x-ci windows job env (kmpkg, choco, python),
-# but uses Visual Studio generator so the project matches x64-windows packages.
+# Called from ci.yml. Env mirrors kumose/x-ci windows job; build uses VS so
+# the project matches kmpkg x64-windows (MSVC) packages instead of MinGW.
 jobs:
   windows-msvc:
     name: Windows MSVC
