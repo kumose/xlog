@@ -15,8 +15,9 @@
 
 #pragma once
 
-#include <string_view>
 #include <array>
+#include <ostream>
+#include <string_view>
 
 namespace xlog {
     enum class LogSeverity {
