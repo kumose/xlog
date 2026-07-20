@@ -12,7 +12,7 @@ jobs:
     uses: kumose/x-ci/.github/workflows/ci-template.yml@v1
     with:
       config-command: |
-        cmake --preset=default -DKMCMAKE_BUILD_TEST=ON
+        cmake --preset=default -DKMCMAKE_BUILD_TEST=ON -DCMAKE_BUILD_TYPE=Release
       build-command: |
         cmake --build build --parallel
       test-command: |
