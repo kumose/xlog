@@ -43,8 +43,8 @@ kmcmake_cc_test(
         SOURCES fnmatch_test.cc
         CXXOPTS ${KMCMAKE_CXX_OPTIONS}
         LINKS
-        GTest::gtest_main
         GTest::gtest
+        GTest::gmock
         xlog::xlog_static
         ${KMCMAKE_DEPS_LINK}
 )

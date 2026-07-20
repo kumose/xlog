@@ -1,4 +1,4 @@
-// Copyright (C) 2026 Kumo inc. and its affiliates. All Rights Reserved.
+// Copyright (C) 2026 Kumo Inc. and its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,46 +15,48 @@
 
 #include <xlog/internal/fnmatch.h>
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 namespace {
-using ::testing::IsFalse;
-using ::testing::IsTrue;
 
 TEST(FNMatchTest, Works) {
   using xlog::log_internal::fn_match;
-  EXPECT_THAT(fn_match("foo", "foo"), IsTrue());
-  EXPECT_THAT(fn_match("foo", "bar"), IsFalse());
-  EXPECT_THAT(fn_match("foo", "fo"), IsFalse());
-  EXPECT_THAT(fn_match("foo", "foo2"), IsFalse());
-  EXPECT_THAT(fn_match("bar/foo.ext", "bar/foo.ext"), IsTrue());
-  EXPECT_THAT(fn_match("*ba*r/fo*o.ext*", "bar/foo.ext"), IsTrue());
-  EXPECT_THAT(fn_match("bar/foo.ext", "bar/baz.ext"), IsFalse());
-  EXPECT_THAT(fn_match("bar/foo.ext", "bar/foo"), IsFalse());
-  EXPECT_THAT(fn_match("bar/foo.ext", "bar/foo.ext.zip"), IsFalse());
-  EXPECT_THAT(fn_match("ba?/*.ext", "bar/foo.ext"), IsTrue());
-  EXPECT_THAT(fn_match("ba?/*.ext", "baZ/FOO.ext"), IsTrue());
-  EXPECT_THAT(fn_match("ba?/*.ext", "barr/foo.ext"), IsFalse());
-  EXPECT_THAT(fn_match("ba?/*.ext", "bar/foo.ext2"), IsFalse());
-  EXPECT_THAT(fn_match("ba?/*", "bar/foo.ext2"), IsTrue());
-  EXPECT_THAT(fn_match("ba?/*", "bar/"), IsTrue());
-  EXPECT_THAT(fn_match("ba?/?", "bar/"), IsFalse());
-  EXPECT_THAT(fn_match("ba?/*", "bar"), IsFalse());
-  EXPECT_THAT(fn_match("?x", "zx"), IsTrue());
-  EXPECT_THAT(fn_match("*b", "aab"), IsTrue());
-  EXPECT_THAT(fn_match("a*b", "aXb"), IsTrue());
-  EXPECT_THAT(fn_match("", ""), IsTrue());
-  EXPECT_THAT(fn_match("", "a"), IsFalse());
-  EXPECT_THAT(fn_match("ab*", "ab"), IsTrue());
-  EXPECT_THAT(fn_match("ab**", "ab"), IsTrue());
-  EXPECT_THAT(fn_match("ab*?", "ab"), IsFalse());
-  EXPECT_THAT(fn_match("*", "bbb"), IsTrue());
-  EXPECT_THAT(fn_match("*", ""), IsTrue());
-  EXPECT_THAT(fn_match("?", ""), IsFalse());
-  EXPECT_THAT(fn_match("***", "**p"), IsTrue());
-  EXPECT_THAT(fn_match("**", "*"), IsTrue());
-  EXPECT_THAT(fn_match("*?", "*"), IsTrue());
+  EXPECT_TRUE(fn_match("foo", "foo"));
+  EXPECT_FALSE(fn_match("foo", "bar"));
+  EXPECT_FALSE(fn_match("foo", "fo"));
+  EXPECT_FALSE(fn_match("foo", "foo2"));
+  EXPECT_TRUE(fn_match("bar/foo.ext", "bar/foo.ext"));
+  EXPECT_TRUE(fn_match("*ba*r/fo*o.ext*", "bar/foo.ext"));
+  EXPECT_FALSE(fn_match("bar/foo.ext", "bar/baz.ext"));
+  EXPECT_FALSE(fn_match("bar/foo.ext", "bar/foo"));
+  EXPECT_FALSE(fn_match("bar/foo.ext", "bar/foo.ext.zip"));
+  EXPECT_TRUE(fn_match("ba?/*.ext", "bar/foo.ext"));
+  EXPECT_TRUE(fn_match("ba?/*.ext", "baZ/FOO.ext"));
+  EXPECT_FALSE(fn_match("ba?/*.ext", "barr/foo.ext"));
+  EXPECT_FALSE(fn_match("ba?/*.ext", "bar/foo.ext2"));
+  EXPECT_TRUE(fn_match("ba?/*", "bar/foo.ext2"));
+  EXPECT_TRUE(fn_match("ba?/*", "bar/"));
+  EXPECT_FALSE(fn_match("ba?/?", "bar/"));
+  EXPECT_FALSE(fn_match("ba?/*", "bar"));
+  EXPECT_TRUE(fn_match("?x", "zx"));
+  EXPECT_TRUE(fn_match("*b", "aab"));
+  EXPECT_TRUE(fn_match("a*b", "aXb"));
+  EXPECT_TRUE(fn_match("", ""));
+  EXPECT_FALSE(fn_match("", "a"));
+  EXPECT_TRUE(fn_match("ab*", "ab"));
+  EXPECT_TRUE(fn_match("ab**", "ab"));
+  EXPECT_FALSE(fn_match("ab*?", "ab"));
+  EXPECT_TRUE(fn_match("*", "bbb"));
+  EXPECT_TRUE(fn_match("*", ""));
+  EXPECT_FALSE(fn_match("?", ""));
+  EXPECT_TRUE(fn_match("***", "**p"));
+  EXPECT_TRUE(fn_match("**", "*"));
+  EXPECT_TRUE(fn_match("*?", "*"));
 }
 
 }  // namespace
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
