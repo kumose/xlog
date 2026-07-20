@@ -22,14 +22,24 @@ jobs:
         with:
           python-version: '3.12'
 
+      # choco rewrites PATH; keep it before msvc-dev-cmd so cl.exe is not wiped.
       - name: Install deps
         run: choco install openssl strawberryperl -y
 
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+          vsversion: '2022'
+
+      # Bootstrap after MSVC so a source-build fallback can find cl.
       - name: Bootstrap kmpkg
         env:
           TEMP_DIR: ${{ runner.temp }}
           KMPKG_FORCE_SYSTEM_BINARIES: 1
         run: |
+          if (-not (Get-Command cl -ErrorAction SilentlyContinue)) {
+            throw "cl.exe not on PATH after msvc-dev-cmd"
+          }
           $kmpkgRoot = Join-Path $env:TEMP_DIR "kmpkgcore"
           git clone https://github.com/kumose/kmpkgcore.git "$kmpkgRoot"
           python "$kmpkgRoot/kmpkgctl" bootstrap --disable-metrics
@@ -39,15 +49,11 @@ jobs:
           echo "KMPKG_FORCE_SYSTEM_BINARIES=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "KMPKG_KEEP_ENV_VARS=PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-
       - name: Dump environment
         run: |
           Write-Host "=== Environment Dump ==="
           Write-Host "OS: $((Get-CimInstance Win32_OperatingSystem).Caption) $((Get-CimInstance Win32_OperatingSystem).OSArchitecture)"
-          $tools = @('cmake', 'ninja', 'git', 'python3', 'curl', 'tar', 'cl', 'link')
+          $tools = @('cmake', 'ninja', 'git', 'python', 'curl', 'tar', 'cl', 'link', 'kmpkg')
           foreach ($tool in $tools) {
             $path = Get-Command $tool -ErrorAction SilentlyContinue
             if ($path) {
