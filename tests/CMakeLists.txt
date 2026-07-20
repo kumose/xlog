@@ -26,13 +26,13 @@ kmcmake_cc_library(
         test_matchers.cc
         LINKS
         xlog::xlog_static
-        GTest::gtest
         GTest::gmock
+        GTest::gtest
         ${KMCMAKE_DEPS_LINK}
         PLINKS
         xlog::xlog_static
-        GTest::gtest
         GTest::gmock
+        GTest::gtest
         ${KMCMAKE_DEPS_LINK}
         CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
@@ -43,8 +43,8 @@ kmcmake_cc_test(
         SOURCES fnmatch_test.cc
         CXXOPTS ${KMCMAKE_CXX_OPTIONS}
         LINKS
-        GTest::gtest
         GTest::gmock
+        GTest::gtest
         xlog::xlog_static
         ${KMCMAKE_DEPS_LINK}
 )
@@ -55,8 +55,8 @@ kmcmake_cc_test(
         SOURCES scoped_mock_log_test.cc
         CXXOPTS ${KMCMAKE_CXX_OPTIONS}
         LINKS
-        GTest::gtest
         GTest::gmock
+        GTest::gtest
         xlog::test_support_static
         xlog::xlog_static
         ${KMCMAKE_DEPS_LINK}
@@ -68,8 +68,8 @@ kmcmake_cc_test(
         SOURCES log_basic_test.cc
         CXXOPTS ${KMCMAKE_CXX_OPTIONS}
         LINKS
-        GTest::gtest
         GTest::gmock
+        GTest::gtest
         xlog::test_support_static
         xlog::xlog_static
         ${KMCMAKE_DEPS_LINK}
@@ -81,8 +81,8 @@ kmcmake_cc_test(
         SOURCES check_test.cc
         CXXOPTS ${KMCMAKE_CXX_OPTIONS}
         LINKS
-        GTest::gtest
         GTest::gmock
+        GTest::gtest
         xlog::test_support_static
         xlog::xlog_static
         ${KMCMAKE_DEPS_LINK}
@@ -107,8 +107,8 @@ foreach (test ${XLOG_LOG_TESTS})
             SOURCES ${test}.cc
             CXXOPTS ${KMCMAKE_CXX_OPTIONS}
             LINKS
-            GTest::gtest
             GTest::gmock
+            GTest::gtest
             xlog::test_support_static
             xlog::xlog_static
             ${KMCMAKE_DEPS_LINK}
@@ -123,8 +123,8 @@ kmcmake_cc_test(
         DEFINES XLOG_MIN_LOG_LEVEL=3
         CXXOPTS ${KMCMAKE_CXX_OPTIONS}
         LINKS
-        GTest::gtest
         GTest::gmock
+        GTest::gtest
         xlog::test_support_static
         xlog::xlog_static
         ${KMCMAKE_DEPS_LINK}
@@ -137,8 +137,8 @@ kmcmake_cc_test(
         DEFINES XLOG_STRIP_LOG=1
         CXXOPTS ${KMCMAKE_CXX_OPTIONS}
         LINKS
-        GTest::gtest
         GTest::gmock
+        GTest::gtest
         xlog::test_support_static
         xlog::xlog_static
         ${KMCMAKE_DEPS_LINK}
@@ -151,8 +151,8 @@ kmcmake_cc_test(
         DEFINES XLOG_MAX_VLOG_VERBOSITY=1
         CXXOPTS ${KMCMAKE_CXX_OPTIONS}
         LINKS
-        GTest::gtest
         GTest::gmock
+        GTest::gtest
         xlog::test_support_static
         xlog::xlog_static
         ${KMCMAKE_DEPS_LINK}
