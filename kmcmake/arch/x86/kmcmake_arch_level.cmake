@@ -80,10 +80,14 @@ if(_LEVEL STREQUAL "NONE")
     return()
 endif()
 
-# AI: Helper macro: enable a feature if hardware supports it, and flag not already present
+# AI: Helper macro: enable a feature if hardware supports it.
+# Empty flags (e.g. MSVC x64 SSE/SSE2 baseline) still mark ENABLE_* but do not
+# append to KMCMAKE_ARCH_OPTION.
 macro(_x86_enable_feature feature flag_var)
     if(KMCMAKE_X86_HAS_${feature} AND NOT KMCMAKE_ARCH_ENABLE_${feature})
-        list(APPEND KMCMAKE_ARCH_OPTION ${${flag_var}})
+        if(NOT "${${flag_var}}" STREQUAL "")
+            list(APPEND KMCMAKE_ARCH_OPTION ${${flag_var}})
+        endif()
         set(KMCMAKE_ARCH_ENABLE_${feature} TRUE)
         kmcmake_print("x86 SIMD: enabled ${feature}")
     endif()
@@ -123,7 +127,7 @@ if(_LEVEL_IDX GREATER_EQUAL 8)
     _x86_enable_feature(MOVBE MOVBE_FLAG)
 endif()
 if(_LEVEL_IDX GREATER_EQUAL 9)
-    if(WIN32)
+    if(MSVC)
         _x86_enable_feature(AVX512F AVX512_FLAG)
     else()
         _x86_enable_feature(AVX512F AVX512F_FLAG)

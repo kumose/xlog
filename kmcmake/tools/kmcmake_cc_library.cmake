@@ -13,43 +13,22 @@
 # limitations under the License.
 ###################################################################################################
 # kmcmake_cc_library
-################################################################################################
-
-################################################################################
-# kmcmake_cc_library
 #
-# Creates `<name>_static` and optionally `<name>_shared` from the same object
-# sources, and exposes aliases:
+# Orchestrates (separate steps):
+#   1. SOURCES → kmcmake_cc_object (INTERNAL compile unit)
+#   2. OBJECTS → kmcmake_ar_static  (pack .a + deps)
+#   3. optional → kmcmake_ar_shared (pack .so + deps)
+#   4. export props → kmcmake_export_product_properties
+#   5. PUBLIC → kmcmake_install_library_target
+#
+# LINKS / PLINKS are forwarded to the INTERNAL object (compile usage) and to
+# ar_static / ar_shared (link). WLINKS are pack-only.
+#
+# Public API unchanged:
 #   - <namespace>::<name>_static
 #   - <namespace>::<name>  (shared alias, only if SHARE)
-#
-# Main options:
-#   PUBLIC          Install targets when enabled.
-#   EXCLUDE_SYSTEM  Do not mark includes as SYSTEM.
-#   UNITY           Enable unity build on generated object target.
-#   SHARE           Also build + install shared variant.
-#
-# Main args:
-#   NAME            Logical library name. Defaults to current folder name.
-#   NAMESPACE       Alias namespace. Defaults to `${PROJECT_NAME}`.
-#
-# Typical usage:
-# kmcmake_cc_library(
-#   PUBLIC
-#   NAME mylib
-#   SHARE
-#   NAMESPACE myproj
-#   SOURCES a.cc b.cc
-#   HEADERS a.h
-#   INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/include
-#   PINCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/src
-#   LINKS Threads::Threads
-# )
-#
-# Notes:
-# - Static library is always built and installed (if PUBLIC). Output: `lib<name>.a`.
-# - Shared library is built and installed only when `SHARE ON`. Output: `lib<name>_shared.so`.
-################################################################################
+###################################################################################################
+
 function(kmcmake_cc_library)
     set(options
             PUBLIC
@@ -93,34 +72,23 @@ function(kmcmake_cc_library)
 
     if ("${KMCMAKE_CC_LIB_NAMESPACE}" STREQUAL "")
         set(KMCMAKE_CC_LIB_NAMESPACE ${PROJECT_NAME})
-        kmcmake_print(" Library, NAMESPACE argument not provided. Using target alias:  ${KMCMAKE_CC_LIB_NAME}::${KMCMAKE_CC_LIB_NAME}")
+        kmcmake_print(" Library, NAMESPACE argument not provided. Using target alias:  ${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME}")
     endif ()
 
     kmcmake_raw("-----------------------------------")
     if (KMCMAKE_CC_LIB_PUBLIC)
-        if(KMCMAKE_CC_LIB_SHARE)
+        if (KMCMAKE_CC_LIB_SHARE)
             set(KMCMAKE_LIB_INFO "${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME}  SHARED&STATIC PUBLIC")
-        else()
+        else ()
             set(KMCMAKE_LIB_INFO "${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME}  STATIC PUBLIC")
-        endif()
+        endif ()
     else ()
-        if(KMCMAKE_CC_LIB_SHARE)
+        if (KMCMAKE_CC_LIB_SHARE)
             set(KMCMAKE_LIB_INFO "${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME}  SHARED&STATIC INTERNAL")
-        else()
+        else ()
             set(KMCMAKE_LIB_INFO "${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME}  STATIC INTERNAL")
-        endif()
+        endif ()
     endif ()
-
-    set(${KMCMAKE_CC_LIB_NAME}_INCLUDE_SYSTEM SYSTEM)
-    if (KMCMAKE_CC_LIB_EXCLUDE_SYSTEM)
-        set(${KMCMAKE_CC_LIB_NAME}_INCLUDE_SYSTEM "")
-    endif ()
-    set(_KMCMAKE_CC_LIB_PUBLIC_INCLUDES
-            ${KMCMAKE_CC_LIB_INCLUDES}
-            "$<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}>"
-            "$<BUILD_INTERFACE:${${PROJECT_NAME}_BINARY_DIR}>"
-            "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
-    )
 
     kmcmake_print_label("Create Library" "${KMCMAKE_LIB_INFO}")
     kmcmake_raw("-----------------------------------")
@@ -138,146 +106,114 @@ function(kmcmake_cc_library)
         kmcmake_print_list_label("Private Links" KMCMAKE_CC_LIB_PLINKS)
         kmcmake_raw("-----------------------------------")
     endif ()
-    set(KMCMAKE_CC_LIB_OBJECTS_FLATTEN)
-    if (KMCMAKE_CC_LIB_OBJECTS)
-        foreach (obj IN LISTS KMCMAKE_CC_LIB_OBJECTS)
-            list(APPEND KMCMAKE_CC_LIB_OBJECTS_FLATTEN $<TARGET_OBJECTS:${obj}>)
-        endforeach ()
-    endif ()
-    if (KMCMAKE_CC_LIB_SOURCES)
-        # Compile sources once into object library, then reuse in static/shared.
-        add_library(${KMCMAKE_CC_LIB_NAME}_OBJECT OBJECT ${KMCMAKE_CC_LIB_SOURCES} ${KMCMAKE_CC_LIB_HEADERS})
-        list(APPEND KMCMAKE_CC_LIB_OBJECTS_FLATTEN $<TARGET_OBJECTS:${KMCMAKE_CC_LIB_NAME}_OBJECT>)
-        if (KMCMAKE_CC_LIB_DEPS)
-            add_dependencies(${KMCMAKE_CC_LIB_NAME}_OBJECT ${KMCMAKE_CC_LIB_DEPS})
-        endif ()
-        
-        # Optional unity build for faster compilation on large source sets.
-        if (KMCMAKE_CC_LIB_UNITY)
-            set_target_properties(${KMCMAKE_CC_LIB_NAME}_OBJECT PROPERTIES
-                    UNITY_BUILD ON
-                    UNITY_BUILD_BATCH_SIZE 20
-            )
-        endif ()
 
-        # Optional precompiled headers. User headers are appended when provided.
+    # --- 1) compile SOURCES via cc_object (INTERNAL: no product export) ---
+    set(_lib_objects ${KMCMAKE_CC_LIB_OBJECTS})
+    if (KMCMAKE_CC_LIB_SOURCES)
+        set(_obj_name ${KMCMAKE_CC_LIB_NAME}_OBJECT)
+        kmcmake_default_public_includes(_compile_incs ${KMCMAKE_CC_LIB_INCLUDES})
+
+        set(_obj_call NAME ${_obj_name} NAMESPACE ${KMCMAKE_CC_LIB_NAMESPACE} INTERNAL)
+        if (KMCMAKE_CC_LIB_EXCLUDE_SYSTEM)
+            list(APPEND _obj_call EXCLUDE_SYSTEM)
+        endif ()
+        if (KMCMAKE_CC_LIB_UNITY)
+            list(APPEND _obj_call UNITY)
+        endif ()
+        list(APPEND _obj_call SOURCES ${KMCMAKE_CC_LIB_SOURCES})
         if (KMCMAKE_CC_LIB_HEADERS)
-            target_precompile_headers(${KMCMAKE_CC_LIB_NAME}_OBJECT PUBLIC
+            list(APPEND _obj_call HEADERS ${KMCMAKE_CC_LIB_HEADERS})
+        endif ()
+        list(APPEND _obj_call PINCLUDES ${_compile_incs} ${KMCMAKE_CC_LIB_PINCLUDES})
+        if (KMCMAKE_CC_LIB_COPTS)
+            list(APPEND _obj_call COPTS ${KMCMAKE_CC_LIB_COPTS})
+        endif ()
+        if (KMCMAKE_CC_LIB_CXXOPTS)
+            list(APPEND _obj_call CXXOPTS ${KMCMAKE_CC_LIB_CXXOPTS})
+        endif ()
+        if (KMCMAKE_CC_LIB_CUOPTS)
+            list(APPEND _obj_call CUOPTS ${KMCMAKE_CC_LIB_CUOPTS})
+        endif ()
+        if (KMCMAKE_CC_LIB_DEPS)
+            list(APPEND _obj_call DEPS ${KMCMAKE_CC_LIB_DEPS})
+        endif ()
+        # Usage requirements needed while compiling SOURCES (includes/defines).
+        if (KMCMAKE_CC_LIB_LINKS)
+            list(APPEND _obj_call LINKS ${KMCMAKE_CC_LIB_LINKS})
+        endif ()
+        if (KMCMAKE_CC_LIB_PLINKS)
+            list(APPEND _obj_call PLINKS ${KMCMAKE_CC_LIB_PLINKS})
+        endif ()
+        kmcmake_cc_object(${_obj_call})
+
+        if (KMCMAKE_CC_LIB_DEFINES)
+            target_compile_definitions(${_obj_name} PRIVATE ${KMCMAKE_CC_LIB_DEFINES})
+        endif ()
+        if (KMCMAKE_CC_LIB_HEADERS)
+            target_precompile_headers(${_obj_name} PUBLIC
                     <vector>
                     <string>
                     ${KMCMAKE_CC_LIB_HEADERS}
             )
         endif ()
 
-
-        set_property(TARGET ${KMCMAKE_CC_LIB_NAME}_OBJECT PROPERTY POSITION_INDEPENDENT_CODE 1)
-        target_compile_options(${KMCMAKE_CC_LIB_NAME}_OBJECT PRIVATE $<$<COMPILE_LANGUAGE:C>:${KMCMAKE_CC_LIB_COPTS}>)
-        target_compile_options(${KMCMAKE_CC_LIB_NAME}_OBJECT PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${KMCMAKE_CC_LIB_CXXOPTS}>)
-        target_compile_options(${KMCMAKE_CC_LIB_NAME}_OBJECT PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${KMCMAKE_CC_LIB_CUOPTS}>)
-        target_include_directories(${KMCMAKE_CC_LIB_NAME}_OBJECT ${${KMCMAKE_CC_LIB_NAME}_INCLUDE_SYSTEM}
-                PRIVATE
-                ${_KMCMAKE_CC_LIB_PUBLIC_INCLUDES}
-        )
-        target_include_directories(${KMCMAKE_CC_LIB_NAME}_OBJECT ${${KMCMAKE_CC_LIB_NAME}_INCLUDE_SYSTEM}
-                PRIVATE
-                ${KMCMAKE_CC_LIB_PINCLUDES}
-        )
-
-        target_compile_definitions(${KMCMAKE_CC_LIB_NAME}_OBJECT
-                PRIVATE
-                ${KMCMAKE_CC_LIB_DEFINES}
-        )
-        target_link_libraries(${KMCMAKE_CC_LIB_NAME}_OBJECT PRIVATE ${KMCMAKE_CC_LIB_PLINKS})
+        list(APPEND _lib_objects ${_obj_name})
     endif ()
 
-    list(LENGTH KMCMAKE_CC_LIB_OBJECTS_FLATTEN obj_len)
-    if (obj_len EQUAL -1)
+    if (NOT _lib_objects)
         kmcmake_error("no source or object give to the library ${KMCMAKE_CC_LIB_NAME}")
     endif ()
-    add_library(${KMCMAKE_CC_LIB_NAME}_static STATIC ${KMCMAKE_CC_LIB_OBJECTS_FLATTEN})
-    if (${KMCMAKE_CC_LIB_NAME}_OBJECT)
-        add_dependencies(${KMCMAKE_CC_LIB_NAME}_static ${KMCMAKE_CC_LIB_NAME}_OBJECT)
-    endif ()
+
+    # --- 2/3) pack static / shared (deps only) ---
+    set(_ar_call
+            NAME ${KMCMAKE_CC_LIB_NAME}
+            NAMESPACE ${KMCMAKE_CC_LIB_NAMESPACE}
+            OBJECTS ${_lib_objects}
+    )
     if (KMCMAKE_CC_LIB_DEPS)
-        add_dependencies(${KMCMAKE_CC_LIB_NAME}_static ${KMCMAKE_CC_LIB_DEPS})
+        list(APPEND _ar_call DEPS ${KMCMAKE_CC_LIB_DEPS})
     endif ()
-    target_link_libraries(${KMCMAKE_CC_LIB_NAME}_static PRIVATE ${KMCMAKE_CC_LIB_PLINKS})
-    target_link_libraries(${KMCMAKE_CC_LIB_NAME}_static PUBLIC ${KMCMAKE_CC_LIB_LINKS})
-    target_link_libraries(${KMCMAKE_CC_LIB_NAME}_static PRIVATE ${KMCMAKE_CC_LIB_WLINKS})
-    target_compile_definitions(${KMCMAKE_CC_LIB_NAME}_static PUBLIC ${KMCMAKE_CC_LIB_DEFINES})
-    set_target_properties(${KMCMAKE_CC_LIB_NAME}_static PROPERTIES
-            INTERFACE_KMCMAKE_RUNTIME_SIMD_LEVEL "${KMCMAKE_RUNTIME_SIMD_LEVEL}"
-            INTERFACE_KMCMAKE_ARCH_FLAGS "${KMCMAKE_ARCH_OPTION}"
-            INTERFACE_KMCMAKE_CXX_OPTIONS "${KMCMAKE_CXX_OPTIONS}"
-            KMCMAKE_RUNTIME_SIMD_LEVEL "${KMCMAKE_RUNTIME_SIMD_LEVEL}"
-            KMCMAKE_ARCH_FLAGS "${KMCMAKE_ARCH_OPTION}"
-            KMCMAKE_CXX_OPTIONS "${KMCMAKE_CXX_OPTIONS}"
-            EXPORT_PROPERTIES "KMCMAKE_RUNTIME_SIMD_LEVEL;KMCMAKE_ARCH_FLAGS;KMCMAKE_CXX_OPTIONS"
-    )
-    set_target_properties(${KMCMAKE_CC_LIB_NAME}_static PROPERTIES
-            OUTPUT_NAME ${KMCMAKE_CC_LIB_NAME})
-    add_library(${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME}_static ALIAS ${KMCMAKE_CC_LIB_NAME}_static)
-    target_include_directories(${KMCMAKE_CC_LIB_NAME}_static ${${KMCMAKE_CC_LIB_NAME}_INCLUDE_SYSTEM}
-            PUBLIC
-            ${_KMCMAKE_CC_LIB_PUBLIC_INCLUDES}
-    )
+    if (KMCMAKE_CC_LIB_LINKS)
+        list(APPEND _ar_call LINKS ${KMCMAKE_CC_LIB_LINKS})
+    endif ()
+    if (KMCMAKE_CC_LIB_PLINKS)
+        list(APPEND _ar_call PLINKS ${KMCMAKE_CC_LIB_PLINKS})
+    endif ()
+    if (KMCMAKE_CC_LIB_WLINKS)
+        list(APPEND _ar_call WLINKS ${KMCMAKE_CC_LIB_WLINKS})
+    endif ()
 
-    if(KMCMAKE_CC_LIB_SHARE)
-        add_library(${KMCMAKE_CC_LIB_NAME}_shared SHARED ${KMCMAKE_CC_LIB_OBJECTS_FLATTEN})
-        if (${KMCMAKE_CC_LIB_NAME}_OBJECT)
-            add_dependencies(${KMCMAKE_CC_LIB_NAME}_shared ${KMCMAKE_CC_LIB_NAME}_OBJECT)
-        endif ()
-        if (KMCMAKE_CC_LIB_DEPS)
-            add_dependencies(${KMCMAKE_CC_LIB_NAME}_shared ${KMCMAKE_CC_LIB_DEPS})
-        endif ()
-        target_link_libraries(${KMCMAKE_CC_LIB_NAME}_shared PRIVATE ${KMCMAKE_CC_LIB_PLINKS})
-        target_link_libraries(${KMCMAKE_CC_LIB_NAME}_shared PUBLIC ${KMCMAKE_CC_LIB_LINKS})
-        target_compile_definitions(${KMCMAKE_CC_LIB_NAME}_shared PUBLIC ${KMCMAKE_CC_LIB_DEFINES})
-        set_target_properties(${KMCMAKE_CC_LIB_NAME}_shared PROPERTIES
-                INTERFACE_KMCMAKE_RUNTIME_SIMD_LEVEL "${KMCMAKE_RUNTIME_SIMD_LEVEL}"
-                INTERFACE_KMCMAKE_ARCH_FLAGS "${KMCMAKE_ARCH_OPTION}"
-                INTERFACE_KMCMAKE_CXX_OPTIONS "${KMCMAKE_CXX_OPTIONS}"
-                KMCMAKE_RUNTIME_SIMD_LEVEL "${KMCMAKE_RUNTIME_SIMD_LEVEL}"
-                KMCMAKE_ARCH_FLAGS "${KMCMAKE_ARCH_OPTION}"
-                KMCMAKE_CXX_OPTIONS "${KMCMAKE_CXX_OPTIONS}"
-                EXPORT_PROPERTIES "KMCMAKE_RUNTIME_SIMD_LEVEL;KMCMAKE_ARCH_FLAGS;KMCMAKE_CXX_OPTIONS"
-        )
-        foreach (link ${KMCMAKE_CC_LIB_WLINKS})
-            target_link_libraries(${KMCMAKE_CC_LIB_NAME}_shared PRIVATE $<LINK_LIBRARY:WHOLE_ARCHIVE,${link}>)
-        endforeach ()
-        set_target_properties(${KMCMAKE_CC_LIB_NAME}_shared PROPERTIES
-                OUTPUT_NAME "${KMCMAKE_CC_LIB_NAME}_shared"
-                VERSION ${${PROJECT_NAME}_VERSION}
-                SOVERSION ${${PROJECT_NAME}_VERSION_MAJOR})
-        add_library(${KMCMAKE_CC_LIB_NAMESPACE}::${KMCMAKE_CC_LIB_NAME} ALIAS ${KMCMAKE_CC_LIB_NAME}_shared)
-        target_include_directories(${KMCMAKE_CC_LIB_NAME}_shared ${${KMCMAKE_CC_LIB_NAME}_INCLUDE_SYSTEM}
-                PUBLIC
-                ${_KMCMAKE_CC_LIB_PUBLIC_INCLUDES}
-        )
-    endif()
+    kmcmake_ar_static(${_ar_call} OUTPUT_NAME ${KMCMAKE_CC_LIB_NAME})
 
-    # Install policy:
-    # - PUBLIC: install static always
-    # - shared install only when KMCMAKE_CC_LIB_SHARE
+    if (KMCMAKE_CC_LIB_SHARE)
+        kmcmake_ar_shared(${_ar_call})
+    endif ()
+
+    # --- 4) product export properties (INTERFACE_*) ---
+    # Merge usage from user OBJECTS only (not the INTERNAL <name>_OBJECT compile unit).
+    kmcmake_default_public_includes(_pub_incs ${KMCMAKE_CC_LIB_INCLUDES})
+    set(_export_args INCLUDES ${_pub_incs})
+    if (KMCMAKE_CC_LIB_OBJECTS)
+        list(APPEND _export_args OBJECTS ${KMCMAKE_CC_LIB_OBJECTS})
+    endif ()
+    if (KMCMAKE_CC_LIB_DEFINES)
+        list(APPEND _export_args DEFINES ${KMCMAKE_CC_LIB_DEFINES})
+    endif ()
+
+    kmcmake_export_product_properties(${KMCMAKE_CC_LIB_NAME}_static ${_export_args})
+    if (KMCMAKE_CC_LIB_SHARE)
+        kmcmake_export_product_properties(${KMCMAKE_CC_LIB_NAME}_shared ${_export_args})
+    endif ()
+
+    # --- 5) install ---
     if (KMCMAKE_CC_LIB_PUBLIC)
-        install(TARGETS ${KMCMAKE_CC_LIB_NAME}_static
-                EXPORT ${PROJECT_NAME}Targets
-                RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-                LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-                ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-                INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-        if(KMCMAKE_CC_LIB_SHARE)
-            install(TARGETS ${KMCMAKE_CC_LIB_NAME}_shared
-                    EXPORT ${PROJECT_NAME}Targets
-                    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-                    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-                    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-                    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-        endif()
+        kmcmake_install_library_target(${KMCMAKE_CC_LIB_NAME}_static STATIC)
+        if (KMCMAKE_CC_LIB_SHARE)
+            kmcmake_install_library_target(${KMCMAKE_CC_LIB_NAME}_shared SHARED)
+        endif ()
     endif ()
 
     foreach (arg IN LISTS KMCMAKE_CC_LIB_UNPARSED_ARGUMENTS)
         message(WARNING "Unparsed argument: ${arg}")
     endforeach ()
-
 endfunction()
