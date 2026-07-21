@@ -2,12 +2,23 @@
   "version": 2,
   "configurePresets": [
     {
-      "name": "default",
-      "generator": "Unix Makefiles",
-      "binaryDir": "${sourceDir}/build",
+      "name": "base",
+      "hidden": true,
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "$env{KMPKG_CMAKE}"
       }
+    },
+    {
+      "name": "default",
+      "inherits": "base",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build"
+    },
+    {
+      "name": "ninja",
+      "inherits": "base",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-ninja"
     }
   ]
 }

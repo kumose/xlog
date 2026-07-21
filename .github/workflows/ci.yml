@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  ci:
-    uses: kumose/x-ci/.github/workflows/ci-template.yml@v1
+  ubuntu:
+    uses: kumose/x-ci/.github/workflows/ubuntu.yml@v2
     with:
       config-command: |
         cmake --preset=default -DKMCMAKE_BUILD_TEST=ON -DCMAKE_BUILD_TYPE=Release
@@ -17,11 +17,46 @@ jobs:
         cmake --build build --parallel
       test-command: |
         ctest --test-dir build --output-on-failure -j1
-      skip-macos-x86: true
-      skip-windows: true
-      skip-windows-arm64: true
-      skip-linux-musl-arm64: true
 
-  # MSVC + kmpkg x64-windows (shared x-ci Windows job mixes MinGW with MSVC packages).
-  windows-msvc:
-    uses: ./.github/workflows/windows.yml
+  alpine:
+    uses: kumose/x-ci/.github/workflows/alpine.yml@v2
+    with:
+      skip-arm: true
+      config-command: |
+        cmake --preset=default -DKMCMAKE_BUILD_TEST=ON -DCMAKE_BUILD_TYPE=Release
+      build-command: |
+        cmake --build build --parallel
+      test-command: |
+        ctest --test-dir build --output-on-failure -j1
+
+  centos:
+    uses: kumose/x-ci/.github/workflows/centos.yml@v2
+    with:
+      config-command: |
+        cmake --preset=default -DKMCMAKE_BUILD_TEST=ON -DCMAKE_BUILD_TYPE=Release
+      build-command: |
+        cmake --build build --parallel
+      test-command: |
+        ctest --test-dir build --output-on-failure -j1
+
+  mac:
+    uses: kumose/x-ci/.github/workflows/mac.yml@v2
+    with:
+      skip-amd: true
+      config-command: |
+        cmake --preset=default -DKMCMAKE_BUILD_TEST=ON -DCMAKE_BUILD_TYPE=Release
+      build-command: |
+        cmake --build build --parallel
+      test-command: |
+        ctest --test-dir build --output-on-failure -j1
+
+  windows:
+    uses: kumose/x-ci/.github/workflows/windows.yml@v2
+    with:
+      skip-arm: true
+      config-command: |
+        cmake --preset=ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_MAKE_PROGRAM="$env:CMAKE_MAKE_PROGRAM" -DKMCMAKE_BUILD_TEST=ON
+      build-command: |
+        cmake --build build-ninja --parallel
+      test-command: |
+        ctest --test-dir build-ninja --output-on-failure -j1
