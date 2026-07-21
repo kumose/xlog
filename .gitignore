@@ -46,6 +46,7 @@ docs/xml
 .vscode
 xlog/version.h
 tests/config.h
+benchmark/config.h
 Testing
 __pychache__
 _skbuild
